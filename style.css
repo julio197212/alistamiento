@@ -1,0 +1,82 @@
+body {
+    background: #f4f7fb;
+    color: #172033;
+}
+
+.app-navbar {
+    background: linear-gradient(90deg, #0d6efd, #084298);
+}
+
+.container-app {
+    max-width: 1600px;
+}
+
+.card {
+    border-radius: 16px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, .06);
+    height: 100%;
+}
+
+.stat-title {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stat-number {
+    font-size: 34px;
+    font-weight: 800;
+    margin-top: 4px;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.form-control,
+.form-select,
+.btn {
+    border-radius: 10px;
+}
+
+.login-page {
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    border-radius: 20px;
+}
+
+.login-icon {
+    font-size: 58px;
+    margin-bottom: 8px;
+}
+
+.chart-box {
+    height: 330px;
+    position: relative;
+}
+
+.chart-box-wide {
+    height: 300px;
+}
+
+@media (max-width: 767px) {
+    .chart-box,
+    .chart-box-wide {
+        height: 280px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+    }
+}

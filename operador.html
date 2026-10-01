@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Registro - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Registro de alistamiento</h2>
+        <p class="text-muted mb-0">
+            Operador: <strong>{{ session.get('nombre') }}</strong>
+        </p>
+    </div>
+    <span class="badge text-bg-primary fs-6 px-3 py-2">OPERADOR</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body p-4">
+                <h4 class="fw-bold mb-1">Registrar vehículo</h4>
+                <p class="text-muted">
+                    Ingrese el móvil y seleccione el proceso realizado.
+                </p>
+
+                <form method="POST" id="registroForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Número del vehículo / móvil
+                        </label>
+                        <input
+                            type="text"
+                            name="vehiculo"
+                            id="vehiculo"
+                            class="form-control form-control-lg text-uppercase"
+                            placeholder="Ej. Z254239"
+                            autocomplete="off"
+                            maxlength="30"
+                            required
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Proceso realizado
+                        </label>
+                        <select name="proceso" class="form-select form-select-lg" required>
+                            <option value="">Seleccione...</option>
+                            {% for proceso in procesos %}
+                                <option value="{{ proceso }}">{{ proceso }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Observación
+                        </label>
+                        <textarea
+                            name="observacion"
+                            class="form-control"
+                            rows="3"
+                            maxlength="500"
+                            placeholder="Opcional"
+                        ></textarea>
+                    </div>
+
+                    <button class="btn btn-success btn-lg w-100" type="submit">
+                        ✅ Confirmar proceso
+                    </button>
+                </form>
+
+                <button
+                    class="btn btn-outline-secondary w-100 mt-2"
+                    type="button"
+                    onclick="limpiarFormulario()"
+                >
+                    Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-8 col-lg-7">
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-title">Procesos realizados hoy</div>
+                    <div class="stat-number">{{ total_hoy }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-title">Vehículos únicos hoy</div>
+                    <div class="stat-number">{{ vehiculos_hoy }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-0">Mis registros</h4>
+                        <small class="text-muted">Últimos 50 registros</small>
+                    </div>
+                    <span class="badge bg-primary fs-6">{{ registros|length }}</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vehículo</th>
+                                <th>Proceso</th>
+                                <th>Fecha / hora</th>
+                                <th>Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in registros %}
+                            <tr>
+                                <td><strong>{{ r.vehiculo }}</strong></td>
+                                <td>
+                                    <span class="badge text-bg-info">
+                                        {{ r.proceso }}
+                                    </span>
+                                </td>
+                                <td>{{ r.fecha_hora }}</td>
+                                <td>{{ r.observacion or '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    Todavía no tienes registros.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function limpiarFormulario() {
+    document.getElementById("registroForm").reset();
+    document.getElementById("vehiculo").focus();
+}
+
+document.getElementById("vehiculo").focus();
+</script>
+{% endblock %}
