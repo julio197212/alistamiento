@@ -71,6 +71,23 @@ def init_db():
     usuarios_iniciales = [
         ("Administrador", "admin", "Admin123*", "admin"),
         ("Operador 1", "operador1", "Operador123*", "operador"),
+        ("Jhonatan Hernandez", "jonas", "253733", "operador"),
+        ("Leonard Rojas", "leonard", "256102", "operador"),
+        ("Sandro Gomez", "sandro", "256598", "operador"),
+        ("Cesar Piñeros", "cesar", "257944", "operador"),
+        ("Cristian Muñoz", "cristian", "259399", "operador"),
+        ("Yonathan Guillermo", "yonathan", "259555", "operador"),
+        ("luis Galindo", "luis", "259608", "operador"),
+        ("Jhon Cardenas", "jhon", "260906", "operador"),
+        ("Luis buitrago", "luis", "261323", "operador"),
+        ("Jorge sanchez", "jorge", "261360", "operador"),
+        ("Julio Muñoz", "julio", "julio123", "admin"),
+        ("Juan Rojas", "juan", "juan123", "admin"),
+        ("Jorge Albaracin", "jorge", "jorgea123", "admin"),
+        ("Jorge medina", "jorge", "jorgem123", "admin"),
+        ("Roger Alzate", "roger", "roger123", "admin"),
+        
+        
     ]
 
     for nombre, usuario, password, rol in usuarios_iniciales:
