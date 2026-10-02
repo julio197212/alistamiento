@@ -83,7 +83,7 @@ def init_db():
         ("Jorge sanchez", "jorge", "261360", "operador"),
         ("Julio Muñoz", "julio", "julio123", "admin"),
         ("Juan Rojas", "juan", "juan123", "admin"),
-        ("Jorge Albaracin", "jorge", "jorgea123", "admin"),
+        ("Jorge Albaracin", "albjor", "albjor123", "admin"),
         ("Jorge medina", "jormed", "jormed123", "admin"),
         ("Roger Alzate", "roger", "roger123", "admin"),
         
