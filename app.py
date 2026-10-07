@@ -414,18 +414,4 @@ if name == "main":
 init_db()
 app.run(host="0.0.0.0", port=5000, debug=False)
 
-### Pasos para reactivar:
-1. Reemplaza el texto en `app.py` y **guarda el archivo**.
-2. Ve a la consola negra de tu computadora y presiona **`Ctrl + C`** para forzar el apagado.
-3. Enciende de nuevo el sistema con: `python app.py`
-4. Recarga la página en tu celular. El error habrá desaparecido por completo.
 
-<FollowUp>
-Por favor, guarda el código, reinicia el servidor y confírmame:
-* ¿Ya puedes ver el **login azul en tu teléfono celular** de manera normal?
-</FollowUp>
-• 
-YouTube·Miguel Grinberg
-How To Fix an Internal Server Error in Flask
-6 ago 2020 — This error is a general catch-all … developers need to examine the terminal session where the Flask server is running. Correcting ...
-10:19
