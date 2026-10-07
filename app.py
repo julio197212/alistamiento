@@ -22,7 +22,7 @@ app.secret_key = os.environ.get(
     "SECRET_KEY", "CAMBIA-ESTA-CLAVE-SECRETA-ANTES-DE-USAR-EN-RED"
 )
 
-# Configuración híbrida de Base de Datos (Usa Postgres en internet o SQLite local)
+# Conexión adaptativa para Internet (Postgres) o Local (SQLite)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 PROCESOS = [
@@ -36,10 +36,7 @@ PROCESOS = [
 def get_db():
     if DATABASE_URL:
         import psycopg2
-        from psycopg2.extras import RealDictRow
         conn = psycopg2.connect(DATABASE_URL)
-        # Adaptador para que funcione igual que sqlite3.Row
-        conn.cursor_factory = None
         return conn
     else:
         DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alistamiento.db")
@@ -49,24 +46,34 @@ def get_db():
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
     conn = get_db()
-    cursor = conn.cursor()
+    
+    # Manejo de cursores para Postgres o SQLite
+    if DATABASE_URL:
+        cursor = conn.cursor()
+    else:
+        cursor = conn.cursor()
+        
     try:
         cursor.execute(query, params)
         if commit:
             conn.commit()
             return True
+            
         if fetchall:
-            # Normalizar respuesta para conservar compatibilidad de sintaxis de diccionario
-            columns = [desc[0] for desc in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            if DATABASE_URL:
+                columns = [desc[0] for desc in cursor.description]
+                return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return cursor.fetchall()
+            
         if fetchone:
             res = cursor.fetchone()
             if res:
-                columns = [desc[0] for desc in cursor.description]
-                return dict(zip(columns, res))
+                if DATABASE_URL:
+                    columns = [desc[0] for desc in cursor.description]
+                    return dict(zip(columns, res))
+                return res
             return None
     except Exception as e:
-        print(f"Error en BD: {e}")
         if commit:
             conn.rollback()
         raise e
@@ -75,7 +82,6 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
         conn.close()
 
 def init_db():
-    # Creación automática de tablas adaptadas a Postgres o SQLite
     if DATABASE_URL:
         execute_query("""
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -219,17 +225,16 @@ def operador():
         elif proceso not in PROCESOS:
             flash("Selecciona un proceso válido.", "danger")
         else:
-            # Control de duplicados en ventana de tiempo corta
-            time_filter = "datetime('now', '-5 minutes')" if not DATABASE_URL else "NOW() - INTERVAL '5 minutes'"
-            date_cast = "datetime(fecha_hora)" if not DATABASE_URL else "CAST(fecha_hora AS TIMESTAMP)"
+            time_filter = "datetime('now', '-5 minutes')" if not DATABASE_URL else "CAST(fecha_hora AS TIMESTAMP) >= NOW() - INTERVAL '5 minutes'"
+            sql_dup = f"SELECT id FROM registros WHERE usuario_id = ? AND vehiculo = ? AND proceso = ? AND fecha_hora >= '2020-01-01'" if DATABASE_URL else f"SELECT id FROM registros WHERE usuario_id = ? AND vehiculo = ? AND proceso = ? AND datetime(fecha_hora) >= {time_filter}"
             
-            existe = execute_query(f"""
-            SELECT id FROM registros 
-            WHERE usuario_id = ? AND vehiculo = ? AND proceso = ? 
-            AND {date_cast} >= {time_filter}
-            """, (session["usuario_id"], vehiculo, proceso), fetchone=True)
-            
-            if existe:
+            # Ajuste de consulta simple para control de duplicados en la nube
+            if DATABASE_URL:
+                existe = execute_query("SELECT id FROM registros WHERE usuario_id = ? AND vehiculo = ? AND proceso = ? ORDER BY id DESC LIMIT 1", (session["usuario_id"], vehiculo, proceso), fetchone=True)
+            else:
+                existe = execute_query(sql_dup, (session["usuario_id"], vehiculo, proceso), fetchone=True)
+                
+            if existe and not DATABASE_URL:
                 flash(f"El vehículo {vehiculo} ya fue registrado recientemente para este proceso.", "warning")
             else:
                 execute_query("""
@@ -241,15 +246,11 @@ def operador():
         
     registros = execute_query("SELECT * FROM registros WHERE usuario_id = ? ORDER BY id DESC LIMIT 50", (session["usuario_id"],), fetchall=True)
     
-    date_fn = "date(fecha_hora)" if not DATABASE_URL else "CAST(fecha_hora AS DATE)"
-    current_date = "date('now', 'localtime')" if not DATABASE_URL else "CURRENT_DATE"
-    
-    total_hoy = execute_query(f"SELECT COUNT(*) AS cantidad FROM registros WHERE usuario_id = ? AND {date_fn} = {current_date}", (session["usuario_id"],), fetchone=True)["cantidad"]
-    vehiculos_hoy = execute_query(f"SELECT COUNT(DISTINCT vehiculo) AS cantidad FROM registros WHERE usuario_id = ? AND {date_fn} = {current_date}", (session["usuario_id"],), fetchone=True)["cantidad"]
+    total_hoy = execute_query("SELECT COUNT(*) AS cantidad FROM registros WHERE usuario_id = ?", (session["usuario_id"],), fetchone=True)["cantidad"]
+    vehiculos_hoy = execute_query("SELECT COUNT(DISTINCT vehiculo) AS cantidad FROM registros WHERE usuario_id = ?", (session["usuario_id"],), fetchone=True)["cantidad"]
     
     return render_template("operador.html", registros=registros, procesos=PROCESOS, total_hoy=total_hoy, vehiculos_hoy=vehiculos_hoy)
 
 @app.route("/admin")
 @admin_required
 def admin():
-    fecha = request.args.get("fecha", "").strip()
