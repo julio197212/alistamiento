@@ -2,6 +2,8 @@ import io, os, sqlite3, openpyxl
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from openpyxl.styles import Font, PatternFill, Alignment
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "CLAVE-SECRETA-PRODUCCION-2026")
@@ -31,7 +33,6 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
         if commit: conn.rollback()
         raise e
     finally: cursor.close(); conn.close()
-
 def init_db():
     if DATABASE_URL:
         execute_query("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nombre TEXT, usuario TEXT UNIQUE, password VARCHAR(500), rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT);", commit=True)
@@ -67,24 +68,23 @@ def index():
     if "usuario_id" not in session: return redirect(url_for("login"))
     return redirect(url_for("admin" if session.get("rol") == "admin" else "operador"))
 
-# Ruta API secreta para buscar los datos del Excel al escribir el carro
 @app.route("/buscar_vehiculo/<numero>")
 @login_required
 def buscar_vehiculo(numero):
     excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datos.xlsx")
     if not os.path.exists(excel_path):
-        return jsonify({"encontrado": False, "msg": "Archivo de datos no cargado"})
+        return jsonify({"encontrado": False, "msg": "Archivo no encontrado"})
     try:
-        wb = openpyxl.load_workbook(excel_path, read_only=True)
+        wb = openpyxl.load_workbook(excel_path, data_only=True)
         ws = wb.active
         for row in ws.iter_rows(min_row=2, values_only=True):
-            if row[0] and str(row[0]).strip().upper() == str(numero).strip().upper():
+            if row and len(row) >= 5 and str(row[0]).strip().upper() == str(numero).strip().upper():
                 return jsonify({
                     "encontrado": True,
-                    "ruta": row[1] if row[1] else "-",
-                    "tabla": row[2] if row[2] else "-",
-                    "hora": row[3] if row[3] else "-",
-                    "novedad": row[4] if row[4] else "-"
+                    "ruta": str(row[1]) if row[1] is not None else "-",
+                    "tabla": str(row[2]) if row[2] is not None else "-",
+                    "hora": str(row[3]) if row[3] is not None else "-",
+                    "novedad": str(row[4]) if row[4] is not None else "-"
                 })
     except Exception as e:
         return jsonify({"encontrado": False, "msg": str(e)})
@@ -139,7 +139,7 @@ def admin():
     operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador' ORDER BY nombre", fetchall=True)
     total = len(registros)
     vehiculos_unicos = len(set([r['vehiculo'] for r in registros])) if registros else 0
-    return render_template("admin.html", registros=registros, operadores=operadores, total=total, vehiculos_unicos=vehiculos_unicos)
+    return render_template("admin.html", registros=registros, operators=operadores, total=total, vehiculos_unicos=vehiculos_unicos, operadores=operadores)
 
 init_db()
 
