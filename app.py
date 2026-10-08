@@ -112,12 +112,22 @@ def admin():
 @admin_required
 def usuarios():
     if request.method == "POST":
-        nombre, usuario, password = request.form.get("nombre", "").strip(), request.form.get("usuario", "").strip().lower(), request.form.get("password", "")
+        nombre = request.form.get("nombre", "").strip()
+        usuario = request.form.get("usuario", "").strip().lower()
+        password = request.form.get("password", "")
+        rol = request.form.get("rol", "operador")
+        
         if nombre and usuario and password:
             try:
-                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, 'operador', 1, ?)", (nombre, usuario, generate_password_hash(password), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-                flash("Usuario creado.", "success")
-            except: flash("El usuario ya existe.", "danger")
+                # Consulta corregida para la estructura de la base de datos de internet
+                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", 
+                              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+                flash("Usuario creado correctamente.", "success")
+            except: 
+                flash("El nombre de usuario ya existe.", "danger")
+        else:
+            flash("Completa todos los campos obligatorios.", "danger")
+            
     lista = execute_query("SELECT id, nombre, usuario, rol, activo, creado_en FROM usuarios ORDER BY nombre", fetchall=True)
     return render_template("usuarios.html", usuarios=lista)
 
