@@ -91,21 +91,35 @@ def login():
 @app.route("/logout")
 def logout(): session.clear(); return redirect(url_for("login"))
 
-@app.route("/operador", methods=["GET", "POST"])
-@login_required
-def operador():
-    if session.get("rol") != "operador": return redirect(url_for("admin"))
-    if request.method == "POST":
-        vehiculo = request.form.get("vehiculo", "").strip().upper()
-        proceso = request.form.get("proceso", "").strip()
-        observacion = request.form.get("observacion", "").strip()
-        if not vehiculo or proceso not in PROCESOS: flash("Datos inválidos.", "danger")
-        else:
-            execute_query("INSERT INTO registros (usuario_id, vehiculo, proceso, fecha_hora, observacion) VALUES (?, ?, ?, ?, ?)", (session["usuario_id"], vehiculo, proceso, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), observacion), commit=True)
-            flash(f"Vehículo {vehiculo} registrado correctamente.", "success")
-        return redirect(url_for("operador"))
-    registros = execute_query("SELECT * FROM registros WHERE usuario_id = ? ORDER BY id DESC LIMIT 50", (session["usuario_id"],), fetchall=True)
-    return render_template("operador.html", registros=registros, procesos=PROCESOS, total_hoy=len(registros), vehiculos_hoy=len(registros))
+@app.route("/admin")
+@admin_required
+def admin():
+    operador_id = request.args.get("operador_id", "").strip()
+    vehiculo = request.args.get("vehiculo", "").strip().upper()
+    
+    conditions = []
+    params = []
+    
+    if operador_id:
+        conditions.append("r.usuario_id = ?")
+        params.append(int(operador_id))
+    if vehiculo:
+        conditions.append("UPPER(r.vehiculo) LIKE ?")
+        params.append(f"%{vehiculo}%")
+        
+    where = " WHERE " + " AND ".join(conditions) if conditions else ""
+    
+    query_base = f"SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} ORDER BY r.id DESC LIMIT 1000"
+    registros = execute_query(query_base, params, fetchall=True)
+    
+    operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador' ORDER BY nombre", fetchall=True)
+    
+    # Calcular contadores dinámicos según los filtros aplicados
+    total = len(registros)
+    vehiculos_unicos = len(set([r['vehiculo'] for r in registros])) if registros else 0
+    
+    return render_template("admin.html", registros=registros, operadores=operadores, total=total, vehiculos_unicos=vehiculos_unicos)
+
 
 @app.route("/admin")
 @admin_required
