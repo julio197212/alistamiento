@@ -34,10 +34,12 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
 
 def init_db():
     if DATABASE_URL:
+        # Este comando borra las tablas viejas dañadas para crearlas desde cero perfectamente:
+        execute_query("DROP TABLE IF EXISTS usuarios, registros CASCADE;", commit=True)
+        
         execute_query("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nombre TEXT, usuario TEXT UNIQUE, password VARCHAR(500), rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT);", commit=True)
         execute_query("CREATE TABLE IF NOT EXISTS registros (id SERIAL PRIMARY KEY, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');", commit=True)
     else:
-
         conn = get_db()
         conn.executescript("CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, usuario TEXT UNIQUE, password TEXT, rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT); CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');")
         conn.commit(); conn.close()
