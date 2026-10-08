@@ -1,9 +1,7 @@
 import io, os, sqlite3, openpyxl
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
-from openpyxl.styles import Font, PatternFill, Alignment
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "CLAVE-SECRETA-PRODUCCION-2026")
@@ -20,7 +18,6 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
-    # TRADUCTOR ROBUSTO INTERNO PARA RENDER
     if DATABASE_URL:
         query = query.replace("?", "%s")
     conn = get_db()
@@ -43,17 +40,12 @@ def init_db():
         conn = get_db()
         conn.executescript("CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, usuario TEXT UNIQUE, password TEXT, rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT); CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');")
         conn.commit(); conn.close()
-    
     try:
-        admin_existe = execute_query("SELECT id FROM usuarios WHERE usuario = 'admin';", fetchone=True)
-        if not admin_existe:
+        if not execute_query("SELECT id FROM usuarios WHERE usuario = 'admin';", fetchone=True):
             execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Administrador', 'admin', ?, 'admin', 1, ?);", (generate_password_hash("Admin123*"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-        
-        jonas_existe = execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True)
-        if not jonas_existe:
+        if not execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True):
             execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Jhonatan Hernandez', 'jonas', ?, 'operador', 1, ?);", (generate_password_hash("253733"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-    except Exception as e:
-        print(f"Error cargando base de datos inicial: {e}")
+    except Exception as e: print(e)
 
 def login_required(f):
     @wraps(f)
@@ -74,6 +66,29 @@ def admin_required(f):
 def index():
     if "usuario_id" not in session: return redirect(url_for("login"))
     return redirect(url_for("admin" if session.get("rol") == "admin" else "operador"))
+
+# Ruta API secreta para buscar los datos del Excel al escribir el carro
+@app.route("/buscar_vehiculo/<numero>")
+@login_required
+def buscar_vehiculo(numero):
+    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datos.xlsx")
+    if not os.path.exists(excel_path):
+        return jsonify({"encontrado": False, "msg": "Archivo de datos no cargado"})
+    try:
+        wb = openpyxl.load_workbook(excel_path, read_only=True)
+        ws = wb.active
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if row[0] and str(row[0]).strip().upper() == str(numero).strip().upper():
+                return jsonify({
+                    "encontrado": True,
+                    "ruta": row[1] if row[1] else "-",
+                    "tabla": row[2] if row[2] else "-",
+                    "hora": row[3] if row[3] else "-",
+                    "novedad": row[4] if row[4] else "-"
+                })
+    except Exception as e:
+        return jsonify({"encontrado": False, "msg": str(e)})
+    return jsonify({"encontrado": False})
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -110,63 +125,22 @@ def operador():
 def admin():
     operador_id = request.args.get("operador_id", "").strip()
     vehiculo = request.args.get("vehiculo", "").strip().upper()
-    
     conditions = []
     params = []
-    
     if operador_id:
         conditions.append("r.usuario_id = ?")
         params.append(int(operador_id))
     if vehiculo:
         conditions.append("UPPER(r.vehiculo) LIKE ?")
         params.append(f"%{vehiculo}%")
-        
     where = " WHERE " + " AND ".join(conditions) if conditions else ""
-    
     query_base = f"SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} ORDER BY r.id DESC LIMIT 1000"
     registros = execute_query(query_base, params, fetchall=True)
-    
     operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador' ORDER BY nombre", fetchall=True)
-    
     total = len(registros)
     vehiculos_unicos = len(set([r['vehiculo'] for r in registros])) if registros else 0
-    
     return render_template("admin.html", registros=registros, operadores=operadores, total=total, vehiculos_unicos=vehiculos_unicos)
 
-@app.route("/exportar")
-@admin_required
-def exportar():
-    operador_id = request.args.get("operador_id", "").strip()
-    vehiculo = request.args.get("vehiculo", "").strip().upper()
-    
-    conditions = []
-    params = []
-    
-    if operador_id:
-        conditions.append("r.usuario_id = ?")
-        params.append(int(operador_id))
-    if vehiculo:
-        conditions.append("UPPER(r.vehiculo) LIKE ?")
-        params.append(f"%{vehiculo}%")
-        
-    where = " WHERE " + " AND ".join(conditions) if conditions else ""
-    
-    rows = execute_query(f"SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} ORDER BY r.id DESC", params, fetchall=True)
-    
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Alistamientos"
-    ws.append(["ID", "Operador", "Vehículo", "Proceso", "Fecha y hora", "Observación"])
-    for r in rows: 
-        ws.append([r["id"], r["operador"], r["vehiculo"], r["proceso"], r["fecha_hora"], r["observacion"]])
-    for col in ws.columns: 
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col.column)].width = 20
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return send_file(output, as_attachment=True, download_name="reporte.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-# Inicialización por fuera para que funcione con Gunicorn
 init_db()
 
 if __name__ == "__main__":
