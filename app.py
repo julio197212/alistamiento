@@ -36,7 +36,9 @@ PROCESOS = [
 def get_db():
     if DATABASE_URL:
         import psycopg2
-        conn = psycopg2.connect(DATABASE_URL)
+        import psycopg2.extras
+        # Usamos RealDictCursor para compatibilidad total de diccionarios en la nube
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
         return conn
     else:
         DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alistamiento.db")
@@ -54,19 +56,10 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
             return True
             
         if fetchall:
-            if DATABASE_URL:
-                columns = [desc[0] for desc in cursor.description]
-                return [dict(zip(columns, row)) for row in cursor.fetchall()]
             return cursor.fetchall()
             
         if fetchone:
-            res = cursor.fetchone()
-            if res:
-                if DATABASE_URL:
-                    columns = [desc[0] for desc in cursor.description]
-                    return dict(zip(columns, res))
-                return res
-            return None
+            return cursor.fetchone()
     except Exception as e:
         if commit:
             conn.rollback()
@@ -271,7 +264,7 @@ def admin():
     vehiculos_unicos = execute_query(f"SELECT COUNT(DISTINCT r.vehiculo) AS cantidad FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where}", params, fetchone=True)["cantidad"]
     por_operador = execute_query(f"SELECT u.nombre AS operador, COUNT(*) AS cantidad FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} GROUP BY u.id, u.nombre ORDER BY cantidad DESC", params, fetchall=True)
     por_proceso = execute_query(f"SELECT r.proceso, COUNT(*) AS cantidad FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} GROUP BY r.proceso ORDER BY cantidad DESC", params, fetchall=True)
-    por_fecha = execute_query(f"SELECT r.fecha_hora AS fecha, COUNT(*) AS cantidad FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} GROUP BY r.fecha_hora ORDER BY fecha DESC LIMIT 10", params, fetchall=True)
+    por_fecha = execute_query(f"SELECT r.fecha_hora AS fecha, COUNT(*) AS cantidad FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} GROUP BY r.fecha_hora ORDER BY r.fecha_hora DESC LIMIT 10", params, fetchall=True)
     
     return render_template(
         "admin.html", registros=registros, operadores=operadores, por_operador=por_operador,
