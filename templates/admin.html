@@ -13,10 +13,45 @@
         </a>
     </div>
 
+    <!-- Barra de Filtros de Consulta -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 25px; border-left: 4px solid #0d6efd;">
+        <h5 style="margin-top: 0; margin-bottom: 15px; color: #334155; font-size: 1rem;">🔎 Filtrar Información</h5>
+        <form method="GET" action="/admin" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+            
+            <!-- Filtro por Operador -->
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Operador</label>
+                <select name="operador_id" style="width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; background-color: white;">
+                    <option value="">-- Todos los Operadores --</option>
+                    {% for op in operadores %}
+                        <option value="{{ op.id }}" {% if request.args.get('operador_id') == op.id|string %}selected{% endif %}>{{ op.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filtro por Vehículo -->
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Vehículo / Placa</label>
+                <input type="text" name="vehiculo" value="{{ request.args.get('vehiculo', '') }}" placeholder="Ej. 7211" 
+                       style="width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; text-transform: uppercase; box-sizing: border-box;">
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" style="padding: 11px 20px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">
+                    Filtrar
+                </button>
+                <a href="/admin" style="padding: 11px 20px; background-color: #94a3b8; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.95rem; text-align: center;">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
     <!-- Tarjetas de Indicadores (Métricas) -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
         <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #0d6efd;">
-            <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Procesos Registrados</div>
+            <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Procesos Encontrados</div>
             <div style="font-size: 2rem; font-weight: 700; color: #1e293b; margin-top: 5px;">{{ total }}</div>
         </div>
         <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #10b981;">
@@ -24,7 +59,7 @@
             <div style="font-size: 2rem; font-weight: 700; color: #1e293b; margin-top: 5px;">{{ vehiculos_unicos }}</div>
         </div>
         <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #f59e0b;">
-            <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Operadores Activos</div>
+            <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Operadores Disponibles</div>
             <div style="font-size: 2rem; font-weight: 700; color: #1e293b; margin-top: 5px;">{{ operadores|length }}</div>
         </div>
     </div>
