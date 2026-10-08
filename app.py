@@ -20,7 +20,7 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
-    # TRADUCTOR AUTOMÁTICO: Convierte signos ? a %s si la app corre en la nube
+    # TRADUCTOR: Convierte de forma automatica los signos ? a %s para la base de datos de internet
     if DATABASE_URL:
         query = query.replace("?", "%s")
     conn = get_db()
@@ -129,6 +129,9 @@ def exportar():
     for col in ws.columns: ws.column_dimensions[openpyxl.utils.get_column_letter(col.column)].width = 20
     output = io.BytesIO(); wb.save(output); output.seek(0)
     return send_file(output, as_attachment=True, download_name="reporte.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+# Ejecución obligatoria para servidores de internet (Gunicorn)
+init_db()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
