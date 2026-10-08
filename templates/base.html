@@ -4,68 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }}</title>
-    <!-- Ruta de Bootstrap 100% corregida para activar el diseño azul profesional -->
     <link href="https://jsdelivr.net" rel="stylesheet">
+    <!-- Estilos internos de respaldo por si tu Wi-Fi bloquea Bootstrap externo -->
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
+        nav { background-color: #0d6efd; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        nav a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; padding: 8px 12px; border-radius: 4px; }
+        nav a:hover { background-color: rgba(255,255,255,0.2); }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .alert { padding: 12px; margin-bottom: 15px; border-radius: 4px; background-color: #d1e7dd; color: #0f5132; }
     </style>
 </head>
 <body>
 
-    <!-- Barra de Navegación Azul Superior -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="/">🚍 {{ app_name }}</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav align-items-center">
-                    {% if session.get('usuario_id') %}
-                        <li class="nav-item me-3 text-white">
-                            <span>Bienvenido, <strong>{{ session.get('nombre') }}</strong></span>
-                        </li>
-                        
-                        {% if session.get('rol') == 'admin' %}
-                            <li class="nav-item">
-                                <a class="nav-link text-white fw-bold me-2" href="/admin">📋 Ver Registros</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white fw-bold me-2" href="/admin/usuarios">👥 Usuarios</a>
-                            </li>
-                        {% endif %}
-                        
-                        <li class="nav-item">
-                            <a class="btn btn-danger btn-sm text-white fw-bold" href="/logout">🚪 Salir</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+    <nav>
+        <a href="/" style="font-size: 1.2rem;">🚍 {{ app_name }}</a>
+        <div>
+            {% if session.get('usuario_id') %}
+                <span style="color: white; margin-right: 15px;">Hola, <strong>{{ session.get('nombre') }}</strong></span>
+                {% if session.get('rol') == 'admin' %}
+                    <a href="/admin">📋 Registros</a>
+                    <a href="/admin/usuarios">👥 Usuarios</a>
+                {% endif %}
+                <a href="/logout" class="btn-danger">Logout</a>
+            {% endif %}
         </div>
     </nav>
 
-    <!-- Alertas del sistema -->
-    <div class="container mt-3">
+    <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                    <div class="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        {% block content %}{% endblock %}
     </div>
 
-    <!-- Contenido variable -->
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Componente de JavaScript para el menú móvil -->
-    <script src="https://jsdelivr.net"></script>
 </body>
 </html>
-
