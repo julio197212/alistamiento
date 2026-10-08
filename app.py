@@ -47,6 +47,8 @@ def init_db():
         execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Administrador', 'admin', ?, 'admin', 1, ?);", (generate_password_hash("Admin123*"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
     if not execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True):
         execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Jhonatan Hernandez', 'jonas', ?, 'operador', 1, ?);", (generate_password_hash("253733"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+    if not execute_query("SELECT id FROM usuarios WHERE usuario = 'julio';", fetchone=True):
+        execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Julio Muñoz', 'julio', ?, 'admin', 1, ?);", (generate_password_hash("julio123"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
 
 def login_required(f):
     @wraps(f)
