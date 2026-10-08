@@ -115,7 +115,8 @@ def usuarios():
         rol = request.form.get("rol", "operador")
         if nombre and usuario and password:
             try:
-                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (%s, %s, %s, %s, 1, %s)", 
+              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
                 flash("Usuario creado correctamente.", "success")
             except: flash("El usuario ya existe.", "danger")
         else: flash("Completa todos los campos.", "danger")
