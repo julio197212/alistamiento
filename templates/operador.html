@@ -2,6 +2,7 @@
 {% block content %}
 <div style="max-width: 800px; margin: 0 auto; padding: 10px;">
     
+    <!-- Tarjeta del Formulario Principal -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 30px; border-top: 4px solid #0d6efd;">
         <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información del Excel automáticamente.</p>
@@ -13,7 +14,7 @@
                        style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-transform: uppercase; box-sizing: border-box;">
             </div>
 
-            <!-- Bloque de Información Externa del Excel (Aparece dinámicamente) -->
+            <!-- Bloque de Información Externa del Excel (Aparece dinámicamente en formato rejilla organizada) -->
             <div id="info_excel" style="display: none; background-color: #f8fafc; border: 1.5px dashed #0d6efd; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
                 <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Ruta</span><div id="txt_ruta" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
                 <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Tabla</span><div id="txt_tabla" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
@@ -43,7 +44,7 @@
         </form>
     </div>
 
-    <!-- Tabla Historial -->
+    <!-- Tabla de Historial Reciente -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; overflow-x: auto;">
         <h4 style="margin-top:0; margin-bottom: 15px; color: #1e293b;">🕒 Sus Últimos 50 Registros</h4>
         <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
@@ -69,7 +70,7 @@
     </div>
 </div>
 
-<!-- Lógica del buscador en tiempo real sin recargar la página -->
+<!-- Lógica JavaScript del Buscador en tiempo real -->
 <script>
 function consultarExcel(valor) {
     const contenedor = document.getElementById("info_excel");
@@ -77,7 +78,7 @@ function consultarExcel(valor) {
         contenedor.style.display = "none";
         return;
     }
-    fetch("/buscar_vehiculo/" + encodeCal(valor))
+    fetch("/buscar_vehiculo/" + encodeURIComponent(valor))
         .then(response => response.json())
         .then(data => {
             if (data.encontrado) {
@@ -91,6 +92,5 @@ function consultarExcel(valor) {
             }
         }).catch(() => { contenedor.style.display = "none"; });
 }
-function encodeCal(str) { return encodeURIComponent(str); }
 </script>
 {% endblock %}
