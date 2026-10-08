@@ -20,6 +20,9 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
+    # Traduce de forma automática el formato de variables según el tipo de base de datos activa
+    if DATABASE_URL:
+        query = query.replace("?", "%s")
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -34,9 +37,6 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
 
 def init_db():
     if DATABASE_URL:
-        # Este comando borra las tablas viejas dañadas para crearlas desde cero perfectamente:
-        execute_query("DROP TABLE IF EXISTS usuarios, registros CASCADE;", commit=True)
-        
         execute_query("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nombre TEXT, usuario TEXT UNIQUE, password VARCHAR(500), rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT);", commit=True)
         execute_query("CREATE TABLE IF NOT EXISTS registros (id SERIAL PRIMARY KEY, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');", commit=True)
     else:
@@ -126,7 +126,7 @@ def exportar():
     wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Alistamientos"
     ws.append(["ID", "Operador", "Vehículo", "Proceso", "Fecha y hora", "Observación"])
     for r in rows: ws.append([r["id"], r["operador"], r["vehiculo"], r["proceso"], r["fecha_hora"], r["observacion"]])
-    for col in ws.columns: ws.column_dimensions[openpyxl.utils.get_column_letter(col[0].column)].width = 20
+    for col in ws.columns: ws.column_dimensions[openpyxl.utils.get_column_letter(col.column)].width = 20
     output = io.BytesIO(); wb.save(output); output.seek(0)
     return send_file(output, as_attachment=True, download_name="reporte.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
