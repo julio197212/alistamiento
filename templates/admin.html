@@ -2,15 +2,13 @@
 {% block content %}
 <div style="width: 100%; margin: 0 auto;">
     
-    <!-- Encabezado con Botón de Excel -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
-        <div>
-            <h2 style="margin:0; color: #1e293b; font-weight: 700; font-size: 1.7rem;">📊 Panel Administrativo</h2>
-            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.95rem;">Monitoreo general de alistamientos y procesos en tiempo real.</p>
-        </div>
+    <!-- Encabezado Principal -->
+    <div style="margin-bottom: 25px;">
+        <h2 style="margin:0; color: #1e293b; font-weight: 700; font-size: 1.7rem;">📊 Panel Administrativo</h2>
+        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.95rem;">Monitoreo general de alistamientos y procesos en tiempo real.</p>
     </div>
 
-    <!-- Barra de Filtros de Consulta -->
+    <!-- Barra de Filtros de Búsqueda -->
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 25px; border-left: 4px solid #0d6efd;">
         <h5 style="margin-top: 0; margin-bottom: 15px; color: #334155; font-size: 1rem;">🔎 Filtrar Información</h5>
         <form method="GET" action="/admin" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
