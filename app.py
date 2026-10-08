@@ -20,7 +20,6 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
-    # TRADUCTOR: Convierte de forma automatica los signos ? a %s para la base de datos de internet
     if DATABASE_URL:
         query = query.replace("?", "%s")
     conn = get_db()
@@ -47,8 +46,6 @@ def init_db():
         execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Administrador', 'admin', ?, 'admin', 1, ?);", (generate_password_hash("Admin123*"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
     if not execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True):
         execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Jhonatan Hernandez', 'jonas', ?, 'operador', 1, ?);", (generate_password_hash("253733"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-    if not execute_query("SELECT id FROM usuarios WHERE usuario = 'julio';", fetchone=True):
-        execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Julio Muñoz', 'julio', ?, 'admin', 1, ?);", (generate_password_hash("julio123"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
 
 def login_required(f):
     @wraps(f)
@@ -104,7 +101,7 @@ def operador():
 @app.route("/admin")
 @admin_required
 def admin():
-    registros = execute_query("SELECT r.*, u.nombre AS operador FROM registros r JOIN usuarios u ON u.id = r.usuario_id ORDER BY r.id DESC LIMIT 1000", fetchall=True)
+    registros = execute_query("SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id ORDER BY r.id DESC LIMIT 1000", fetchall=True)
     operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador'", fetchall=True)
     return render_template("admin.html", registros=registros, operadores=operadores, por_operador=[], por_proceso=[], por_fecha=[], total=len(registros), vehiculos_unicos=len(registros), filtros={}, procesos=PROCESOS)
 
@@ -116,18 +113,12 @@ def usuarios():
         usuario = request.form.get("usuario", "").strip().lower()
         password = request.form.get("password", "")
         rol = request.form.get("rol", "operador")
-        
         if nombre and usuario and password:
             try:
-                # Consulta corregida para la estructura de la base de datos de internet
-                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", 
-                              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
                 flash("Usuario creado correctamente.", "success")
-            except: 
-                flash("El nombre de usuario ya existe.", "danger")
-        else:
-            flash("Completa todos los campos obligatorios.", "danger")
-            
+            except: flash("El usuario ya existe.", "danger")
+        else: flash("Completa todos los campos.", "danger")
     lista = execute_query("SELECT id, nombre, usuario, rol, activo, creado_en FROM usuarios ORDER BY nombre", fetchall=True)
     return render_template("usuarios.html", usuarios=lista)
 
@@ -142,7 +133,6 @@ def exportar():
     output = io.BytesIO(); wb.save(output); output.seek(0)
     return send_file(output, as_attachment=True, download_name="reporte.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# Ejecución obligatoria para servidores de internet (Gunicorn)
 init_db()
 
 if __name__ == "__main__":
