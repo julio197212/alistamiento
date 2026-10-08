@@ -2,16 +2,23 @@
 {% block content %}
 <div style="max-width: 800px; margin: 0 auto; padding: 10px;">
     
-    <!-- Tarjeta del Formulario Principal -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 30px; border-top: 4px solid #0d6efd;">
         <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Complete los datos del vehículo que acaba de alistar en el patio.</p>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información del Excel automáticamente.</p>
         
         <form method="POST" action="/operador">
             <div style="margin-bottom: 20px;">
                 <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Número del Vehículo / Placa</label>
-                <input type="text" name="vehiculo" required placeholder="Ej. 7211 o Z254" 
+                <input type="text" id="input_vehiculo" name="vehiculo" required placeholder="Ej. 7211" oninput="consultarExcel(this.value)"
                        style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-transform: uppercase; box-sizing: border-box;">
+            </div>
+
+            <!-- Bloque de Información Externa del Excel (Aparece dinámicamente) -->
+            <div id="info_excel" style="display: none; background-color: #f8fafc; border: 1.5px dashed #0d6efd; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Ruta</span><div id="txt_ruta" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
+                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Tabla</span><div id="txt_tabla" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
+                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Hora</span><div id="txt_hora" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
+                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Novedad</span><div id="txt_novedad" style="font-size:1.1rem; font-weight:bold; color:#ef4444;">-</div></div>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -25,18 +32,18 @@
             </div>
 
             <div style="margin-bottom: 25px;">
-                <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Observaciones (Opcional)</label>
-                <input type="text" name="observacion" placeholder="Ej. Ninguna novedad, lavado exterior" 
+                <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Observaciones</label>
+                <input type="text" name="observacion" placeholder="Ej. Ninguna novedad" 
                        style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
             </div>
 
-            <button type="submit" style="width:100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 1.05rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(13,110,253,0.2);">
+            <button type="submit" style="width:100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 1.05rem; font-weight: bold; cursor: pointer;">
                 💾 Guardar Registro Vehicular
             </button>
         </form>
     </div>
 
-    <!-- Tabla de Historial Reciente -->
+    <!-- Tabla Historial -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; overflow-x: auto;">
         <h4 style="margin-top:0; margin-bottom: 15px; color: #1e293b;">🕒 Sus Últimos 50 Registros</h4>
         <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
@@ -61,4 +68,29 @@
         </table>
     </div>
 </div>
+
+<!-- Lógica del buscador en tiempo real sin recargar la página -->
+<script>
+function consultarExcel(valor) {
+    const contenedor = document.getElementById("info_excel");
+    if (!valor || valor.trim() === "") {
+        contenedor.style.display = "none";
+        return;
+    }
+    fetch("/buscar_vehiculo/" + encodeCal(valor))
+        .then(response => response.json())
+        .then(data => {
+            if (data.encontrado) {
+                document.getElementById("txt_ruta").innerText = data.ruta;
+                document.getElementById("txt_tabla").innerText = data.tabla;
+                document.getElementById("txt_hora").innerText = data.hora;
+                document.getElementById("txt_novedad").innerText = data.novedad;
+                contenedor.style.display = "grid";
+            } else {
+                contenedor.style.display = "none";
+            }
+        }).catch(() => { contenedor.style.display = "none"; });
+}
+function encodeCal(str) { return encodeURIComponent(str); }
+</script>
 {% endblock %}
