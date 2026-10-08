@@ -24,7 +24,10 @@
 <body>
 
     <nav>
-        <a href="/" class="nav-logo">🚍 {{ app_name }}</a>
+        <a href="/" class="nav-logo">
+    <img src="https://postimg.cc" alt="Logo" style="height: 35px; width: auto; border-radius: 4px;">
+    {{ app_name }}
+</a>
         <div class="nav-actions">
             {% if session.get('usuario_id') %}
                 <span style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-right: 10px;">Hola, <strong>{{ session.get('nombre') }}</strong></span>
