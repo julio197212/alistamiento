@@ -1,155 +1,64 @@
 {% extends "base.html" %}
-{% block title %}Registro - {{ app_name }}{% endblock %}
-
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div>
-        <h2 class="fw-bold mb-1">Registro de alistamiento</h2>
-        <p class="text-muted mb-0">
-            Operador: <strong>{{ session.get('nombre') }}</strong>
-        </p>
-    </div>
-    <span class="badge text-bg-primary fs-6 px-3 py-2">OPERADOR</span>
-</div>
-
-<div class="row g-4">
-    <div class="col-xl-4 col-lg-5">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body p-4">
-                <h4 class="fw-bold mb-1">Registrar vehículo</h4>
-                <p class="text-muted">
-                    Ingrese el móvil y seleccione el proceso realizado.
-                </p>
-
-                <form method="POST" id="registroForm">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Número del vehículo / móvil
-                        </label>
-                        <input
-                            type="text"
-                            name="vehiculo"
-                            id="vehiculo"
-                            class="form-control form-control-lg text-uppercase"
-                            placeholder="Ej. Z254239"
-                            autocomplete="off"
-                            maxlength="30"
-                            required
-                        >
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Proceso realizado
-                        </label>
-                        <select name="proceso" class="form-select form-select-lg" required>
-                            <option value="">Seleccione...</option>
-                            {% for proceso in procesos %}
-                                <option value="{{ proceso }}">{{ proceso }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Observación
-                        </label>
-                        <textarea
-                            name="observacion"
-                            class="form-control"
-                            rows="3"
-                            maxlength="500"
-                            placeholder="Opcional"
-                        ></textarea>
-                    </div>
-
-                    <button class="btn btn-success btn-lg w-100" type="submit">
-                        ✅ Confirmar proceso
-                    </button>
-                </form>
-
-                <button
-                    class="btn btn-outline-secondary w-100 mt-2"
-                    type="button"
-                    onclick="limpiarFormulario()"
-                >
-                    Limpiar
-                </button>
+<div style="max-width: 800px; margin: 0 auto; padding: 10px;">
+    
+    <!-- Tarjeta del Formulario Principal -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 30px; border-top: 4px solid #0d6efd;">
+        <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Complete los datos del vehículo que acaba de alistar en el patio.</p>
+        
+        <form method="POST" action="/operador">
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Número del Vehículo / Placa</label>
+                <input type="text" name="vehiculo" required placeholder="Ej. 7211 o Z254" 
+                       style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-transform: uppercase; box-sizing: border-box;">
             </div>
-        </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Proceso Realizado</label>
+                <select name="proceso" required style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background-color: white; box-sizing: border-box;">
+                    <option value="" disabled selected>-- Seleccione un proceso --</option>
+                    {% for p in procesos %}
+                        <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Observaciones (Opcional)</label>
+                <input type="text" name="observacion" placeholder="Ej. Ninguna novedad, lavado exterior" 
+                       style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
+            </div>
+
+            <button type="submit" style="width:100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 1.05rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(13,110,253,0.2);">
+                💾 Guardar Registro Vehicular
+            </button>
+        </form>
     </div>
 
-    <div class="col-xl-8 col-lg-7">
-        <div class="row g-3 mb-4">
-            <div class="col-sm-6">
-                <div class="stat-card">
-                    <div class="stat-title">Procesos realizados hoy</div>
-                    <div class="stat-number">{{ total_hoy }}</div>
-                </div>
-            </div>
-            <div class="col-sm-6">
-                <div class="stat-card">
-                    <div class="stat-title">Vehículos únicos hoy</div>
-                    <div class="stat-number">{{ vehiculos_hoy }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h4 class="fw-bold mb-0">Mis registros</h4>
-                        <small class="text-muted">Últimos 50 registros</small>
-                    </div>
-                    <span class="badge bg-primary fs-6">{{ registros|length }}</span>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Vehículo</th>
-                                <th>Proceso</th>
-                                <th>Fecha / hora</th>
-                                <th>Observación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for r in registros %}
-                            <tr>
-                                <td><strong>{{ r.vehiculo }}</strong></td>
-                                <td>
-                                    <span class="badge text-bg-info">
-                                        {{ r.proceso }}
-                                    </span>
-                                </td>
-                                <td>{{ r.fecha_hora }}</td>
-                                <td>{{ r.observacion or '-' }}</td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    Todavía no tienes registros.
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <!-- Tabla de Historial Reciente -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; overflow-x: auto;">
+        <h4 style="margin-top:0; margin-bottom: 15px; color: #1e293b;">🕒 Sus Últimos 50 Registros</h4>
+        <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+            <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                    <th style="padding: 12px; color: #475569;">Vehículo</th>
+                    <th style="padding: 12px; color: #475569;">Proceso</th>
+                    <th style="padding: 12px; color: #475569;">Fecha / Hora</th>
+                    <th style="padding: 12px; color: #475569;">Observación</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: bold; color: #0d6efd;">{{ r.vehiculo }}</td>
+                    <td style="padding: 12px;"><span style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">{{ r.proceso }}</span></td>
+                    <td style="padding: 12px; color: #64748b; font-size: 0.85rem;">{{ r.fecha_hora }}</td>
+                    <td style="padding: 12px; color: #475569;">{{ r.observacion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function limpiarFormulario() {
-    document.getElementById("registroForm").reset();
-    document.getElementById("vehiculo").focus();
-}
-
-document.getElementById("vehiculo").focus();
-</script>
 {% endblock %}
