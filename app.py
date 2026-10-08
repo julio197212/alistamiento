@@ -20,6 +20,7 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
+    # TRADUCTOR ROBUSTO INTERNO PARA RENDER
     if DATABASE_URL:
         query = query.replace("?", "%s")
     conn = get_db()
@@ -42,10 +43,18 @@ def init_db():
         conn = get_db()
         conn.executescript("CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, usuario TEXT UNIQUE, password TEXT, rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT); CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');")
         conn.commit(); conn.close()
-    if not execute_query("SELECT id FROM usuarios WHERE usuario = 'admin';", fetchone=True):
-        execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Administrador', 'admin', ?, 'admin', 1, ?);", (generate_password_hash("Admin123*"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-    if not execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True):
-        execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Jhonatan Hernandez', 'jonas', ?, 'operador', 1, ?);", (generate_password_hash("253733"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+    
+    # Validar de forma segura si existen los usuarios base usando la traduccion automatica
+    try:
+        admin_existe = execute_query("SELECT id FROM usuarios WHERE usuario = 'admin';", fetchone=True)
+        if not admin_existe:
+            execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Administrador', 'admin', ?, 'admin', 1, ?);", (generate_password_hash("Admin123*"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+        
+        jonas_existe = execute_query("SELECT id FROM usuarios WHERE usuario = 'jonas';", fetchone=True)
+        if not jonas_existe:
+            execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES ('Jhonatan Hernandez', 'jonas', ?, 'operador', 1, ?);", (generate_password_hash("253733"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+    except Exception as e:
+        print(f"Error cargando base de datos inicial: {e}")
 
 def login_required(f):
     @wraps(f)
@@ -115,10 +124,12 @@ def usuarios():
         rol = request.form.get("rol", "operador")
         if nombre and usuario and password:
             try:
-                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (%s, %s, %s, %s, 1, %s)", 
-              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
+                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", 
+                              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
                 flash("Usuario creado correctamente.", "success")
-            except: flash("El usuario ya existe.", "danger")
+            except Exception as e: 
+                print(e)
+                flash("El usuario ya existe o hubo un problema.", "danger")
         else: flash("Completa todos los campos.", "danger")
     lista = execute_query("SELECT id, nombre, usuario, rol, activo, creado_en FROM usuarios ORDER BY nombre", fetchall=True)
     return render_template("usuarios.html", usuarios=lista)
