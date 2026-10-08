@@ -44,7 +44,6 @@ def init_db():
         conn.executescript("CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, usuario TEXT UNIQUE, password TEXT, rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT); CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');")
         conn.commit(); conn.close()
     
-    # Validar de forma segura si existen los usuarios base usando la traduccion automatica
     try:
         admin_existe = execute_query("SELECT id FROM usuarios WHERE usuario = 'admin';", fetchone=True)
         if not admin_existe:
@@ -75,7 +74,6 @@ def admin_required(f):
 def index():
     if "usuario_id" not in session: return redirect(url_for("login"))
     return redirect(url_for("admin" if session.get("rol") == "admin" else "operador"))
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -90,6 +88,22 @@ def login():
 
 @app.route("/logout")
 def logout(): session.clear(); return redirect(url_for("login"))
+
+@app.route("/operador", methods=["GET", "POST"])
+@login_required
+def operador():
+    if session.get("rol") != "operador": return redirect(url_for("admin"))
+    if request.method == "POST":
+        vehiculo = request.form.get("vehiculo", "").strip().upper()
+        proceso = request.form.get("proceso", "").strip()
+        observacion = request.form.get("observacion", "").strip()
+        if not vehiculo or proceso not in PROCESOS: flash("Datos inválidos.", "danger")
+        else:
+            execute_query("INSERT INTO registros (usuario_id, vehiculo, proceso, fecha_hora, observacion) VALUES (?, ?, ?, ?, ?)", (session["usuario_id"], vehiculo, proceso, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), observacion), commit=True)
+            flash(f"Vehículo {vehiculo} registrado correctamente.", "success")
+        return redirect(url_for("operador"))
+    registros = execute_query("SELECT * FROM registros WHERE usuario_id = ? ORDER BY id DESC LIMIT 50", (session["usuario_id"],), fetchall=True)
+    return render_template("operador.html", registros=registros, procesos=PROCESOS, total_hoy=len(registros), vehiculos_hoy=len(registros))
 
 @app.route("/admin")
 @admin_required
@@ -114,51 +128,45 @@ def admin():
     
     operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador' ORDER BY nombre", fetchall=True)
     
-    # Calcular contadores dinámicos según los filtros aplicados
     total = len(registros)
     vehiculos_unicos = len(set([r['vehiculo'] for r in registros])) if registros else 0
     
     return render_template("admin.html", registros=registros, operadores=operadores, total=total, vehiculos_unicos=vehiculos_unicos)
 
-
-@app.route("/admin")
-@admin_required
-def admin():
-    registros = execute_query("SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id ORDER BY r.id DESC LIMIT 1000", fetchall=True)
-    operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador'", fetchall=True)
-    return render_template("admin.html", registros=registros, operadores=operadores, por_operador=[], por_proceso=[], por_fecha=[], total=len(registros), vehiculos_unicos=len(registros), filtros={}, procesos=PROCESOS)
-
-@app.route("/admin/usuarios", methods=["GET", "POST"])
-@admin_required
-def usuarios():
-    if request.method == "POST":
-        nombre = request.form.get("nombre", "").strip()
-        usuario = request.form.get("usuario", "").strip().lower()
-        password = request.form.get("password", "")
-        rol = request.form.get("rol", "operador")
-        if nombre and usuario and password:
-            try:
-                execute_query("INSERT INTO usuarios (nombre, usuario, password, rol, activo, creado_en) VALUES (?, ?, ?, ?, 1, ?)", 
-                              (nombre, usuario, generate_password_hash(password), rol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")), commit=True)
-                flash("Usuario creado correctamente.", "success")
-            except Exception as e: 
-                print(e)
-                flash("El usuario ya existe o hubo un problema.", "danger")
-        else: flash("Completa todos los campos.", "danger")
-    lista = execute_query("SELECT id, nombre, usuario, rol, activo, creado_en FROM usuarios ORDER BY nombre", fetchall=True)
-    return render_template("usuarios.html", usuarios=lista)
-
 @app.route("/exportar")
 @admin_required
 def exportar():
-    rows = execute_query("SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id ORDER BY r.id DESC", fetchall=True)
-    wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Alistamientos"
+    operador_id = request.args.get("operador_id", "").strip()
+    vehiculo = request.args.get("vehiculo", "").strip().upper()
+    
+    conditions = []
+    params = []
+    
+    if operador_id:
+        conditions.append("r.usuario_id = ?")
+        params.append(int(operador_id))
+    if vehiculo:
+        conditions.append("UPPER(r.vehiculo) LIKE ?")
+        params.append(f"%{vehiculo}%")
+        
+    where = " WHERE " + " AND ".join(conditions) if conditions else ""
+    
+    rows = execute_query(f"SELECT r.id, u.nombre AS operador, r.vehiculo, r.proceso, r.fecha_hora, r.observacion FROM registros r JOIN usuarios u ON u.id = r.usuario_id {where} ORDER BY r.id DESC", params, fetchall=True)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Alistamientos"
     ws.append(["ID", "Operador", "Vehículo", "Proceso", "Fecha y hora", "Observación"])
-    for r in rows: ws.append([r["id"], r["operador"], r["vehiculo"], r["proceso"], r["fecha_hora"], r["observacion"]])
-    for col in ws.columns: ws.column_dimensions[openpyxl.utils.get_column_letter(col.column)].width = 20
-    output = io.BytesIO(); wb.save(output); output.seek(0)
+    for r in rows: 
+        ws.append([r["id"], r["operador"], r["vehiculo"], r["proceso"], r["fecha_hora"], r["observacion"]])
+    for col in ws.columns: 
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col.column)].width = 20
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
     return send_file(output, as_attachment=True, download_name="reporte.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+# Inicialización por fuera para que funcione con Gunicorn
 init_db()
 
 if __name__ == "__main__":
