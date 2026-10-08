@@ -20,7 +20,7 @@ def get_db():
     return conn
 
 def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False):
-    # Traduce de forma automática el formato de variables según el tipo de base de datos activa
+    # TRADUCTOR AUTOMÁTICO: Cambia los signos ? por %s si la app corre en internet
     if DATABASE_URL:
         query = query.replace("?", "%s")
     conn = get_db()
@@ -73,7 +73,7 @@ def login():
     if request.method == "POST":
         usuario = request.form.get("usuario", "").strip().lower()
         password = request.form.get("password", "")
-        user = execute_query("SELECT * FROM usuarios WHERE usuario = %s AND activo = 1", (usuario,), fetchone=True)
+        user = execute_query("SELECT * FROM usuarios WHERE usuario = ? AND activo = 1", (usuario,), fetchone=True)
         if user and check_password_hash(user["password"], password):
             session.clear(); session["usuario_id"] = user["id"]; session["nombre"] = user["nombre"]; session["rol"] = user["rol"]
             return redirect(url_for("admin" if user["rol"] == "admin" else "operador"))
