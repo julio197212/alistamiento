@@ -13,7 +13,7 @@ PROCESOS = ["Alistamiento", "Lavado", "Combustible", "Inspección", "Otro"]
 def get_db():
     if DATABASE_URL:
         import psycopg2, psycopg2.extras
-        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor, sslmode='require')
     DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alistamiento.db")
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
