@@ -321,7 +321,6 @@ def exportar():
     for row in rows:
         ws.append([row["id"], row["operador"], row["usuario"], row["vehiculo"], row["proceso"], row["fecha_hora"], row["observacion"]])
     
-    # AQUÍ ESTÁ LA LÍNEA COMPLETA QUE HACÍA FALTA:
     widths = [8, 28, 18, 18, 22, 22, 45]
     for i, width in enumerate(widths, start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
