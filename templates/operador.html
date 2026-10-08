@@ -4,6 +4,12 @@
     
     <!-- Tarjeta del Formulario Principal -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 30px; border-top: 4px solid #0d6efd;">
+        
+        <!-- SALUDO CON EL NOMBRE DEL OPERADOR EN PANTALLA -->
+        <div style="background-color: #f1f5f9; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; color: #334155; font-size: 0.95rem; display: inline-block;">
+            👤 Operador: {{ session.get('nombre') }}
+        </div>
+
         <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información del Excel automáticamente.</p>
         
@@ -14,7 +20,7 @@
                        style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-transform: uppercase; box-sizing: border-box;">
             </div>
 
-            <!-- Bloque de Información Externa del Excel (Aparece dinámicamente en formato rejilla organizada) -->
+            <!-- Bloque de Información Externa del Excel -->
             <div id="info_excel" style="display: none; background-color: #f8fafc; border: 1.5px dashed #0d6efd; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
                 <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Ruta</span><div id="txt_ruta" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
                 <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Tabla</span><div id="txt_tabla" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
@@ -70,7 +76,6 @@
     </div>
 </div>
 
-<!-- Lógica JavaScript del Buscador en tiempo real -->
 <script>
 function consultarExcel(valor) {
     const contenedor = document.getElementById("info_excel");
