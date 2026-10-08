@@ -37,6 +37,9 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
 
 def init_db():
     if DATABASE_URL:
+        # ESTA NUEVA LÍNEA OBLIGA A INTERNET A BORRAR TODO EL DESORDEN ANTERIOR:
+        execute_query("DROP TABLE IF EXISTS usuarios, registros CASCADE;", commit=True)
+        
         execute_query("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nombre TEXT, usuario TEXT UNIQUE, password VARCHAR(500), rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT);", commit=True)
         execute_query("CREATE TABLE IF NOT EXISTS registros (id SERIAL PRIMARY KEY, usuario_id INTEGER, vehiculo TEXT, proceso TEXT, fecha_hora TEXT, observacion TEXT DEFAULT '');", commit=True)
     else:
