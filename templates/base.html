@@ -4,47 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }}</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
     <style>
-        body { background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1e293b; }
-        
-        /* Barra de navegación moderna */
-        nav { background: linear-gradient(135deg, #1e3a8a 0%, #0d6efd 100%); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .nav-logo { color: white; text-decoration: none; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .nav-actions { display: flex; align-items: center; gap: 15px; }
-        .nav-link { color: rgba(255,255,255,0.9); text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 8px 16px; border-radius: 6px; transition: all 0.2s; }
-        .nav-link:hover { color: white; background-color: rgba(255,255,255,0.15); }
-        .btn-logout { background-color: #ef4444; color: white; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 8px 18px; border-radius: 6px; transition: background-color 0.2s; box-shadow: 0 2px 6px rgba(239,68,68,0.2); }
-        .btn-logout:hover { background-color: #dc2626; }
-        
-        /* Contenedor central */
-        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; box-sizing: border-box; }
-        .alert-box { padding: 15px 20px; margin-bottom: 25px; border-radius: 8px; background-color: #ecfdf5; border-left: 4px solid #10b981; color: #065f46; font-weight: 500; font-size: 0.95rem; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
+        nav { background-color: #0d6efd; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-brand-container { display: flex; align-items: center; text-decoration: none; }
+        .title-minga { color: #ffca28; font-weight: 800; font-size: 1.4rem; letter-spacing: 1px; margin-right: 10px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .title-app { color: white; font-weight: bold; font-size: 1.1rem; }
+        nav a.nav-btn { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; padding: 8px 12px; border-radius: 4px; }
+        nav a.nav-btn:hover { background-color: rgba(255,255,255,0.2); }
+        .btn-danger { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .alert { padding: 12px; margin-bottom: 15px; border-radius: 4px; background-color: #d1e7dd; color: #0f5132; }
     </style>
 </head>
 <body>
 
     <nav>
-        <a href="/" class="nav-logo">
-    <img src="{{ url_for('static', filename='favicon.ico') if DATABASE_URL else '/static/favicon.jpg' }}" alt="Logo" style="height: 35px; width: auto; border-radius: 4px; object-fit: contain; margin-right: 8px;">
-    {{ app_name }}
-</a>
-</a>
-        <div class="nav-actions">
+        <div class="nav-brand-container">
+            <!-- Título MINGA en amarillo -->
+            <span class="title-minga">MINGA</span>
+            <span class="title-app">{{ app_name }}</span>
+        </div>
+        <div>
             {% if session.get('usuario_id') %}
-                <span style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-right: 10px;">Hola, <strong>{{ session.get('nombre') }}</strong></span>
+                <span style="color: white; margin-right: 15px;">Hola, <strong>{{ session.get('nombre') }}</strong></span>
                 {% if session.get('rol') == 'admin' %}
-                    <a href="/admin" class="nav-link">📋 Ver Registros</a>
+                    <a href="/admin" class="nav-link nav-btn">📋 Registros</a>
                 {% endif %}
-                <a href="/logout" class="btn-logout">Cerrar Sesión</a>
+                <a href="/logout" class="btn-danger">Logout</a>
             {% endif %}
         </div>
     </nav>
 
-    <div class="main-container">
+    <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert-box">
+                    <div class="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
