@@ -3,14 +3,15 @@
 <div style="display: flex; justify-content: center; align-items: center; min-height: 75vh; padding: 20px;">
     <div style="background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 40px; border-top: 5px solid #0d6efd; text-align: center;">
         
-        <!-- Icono y Título Principal -->
-       <div style="margin-bottom: 25px; display: flex; justify-content: center;">
-    <img src="{{ url_for('static', filename='favicon.jpg') if DATABASE_URL else '/static/favicon.ico' }}" alt="Logo Empresa" style="max-height: 90px; width: auto; object-fit: contain;">
-</div>
+        <!-- LOGO GRANDE Y CENTRADO TRAÍDO DESDE LA CARPETA STATIC -->
+        <div style="margin-bottom: 25px; display: flex; justify-content: center;">
+            <img src="/static/favicon.ico" alt="Logo Empresa" 
+                 style="width: 140px; height: 140px; object-fit: contain; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; background-color: #fafafa;">
+        </div>
+        
         <h2 style="font-size: 1.6rem; color: #1e293b; font-weight: 700; margin-bottom: 5px; margin-top: 0;">Control de Alistamiento</h2>
         <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 30px; margin-top: 0;">Ingrese sus credenciales de acceso</p>
 
-        <!-- Formulario -->
         <form method="POST" action="/login" style="text-align: left;">
             <div style="margin-bottom: 20px;">
                 <label for="usuario" style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Usuario</label>
