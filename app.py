@@ -55,7 +55,7 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
             
         if fetchall:
             if DATABASE_URL:
-                            columns = [desc[0] for desc in cursor.description]
+                columns = [desc[0] for desc in cursor.description]
                 return [dict(zip(columns, row)) for row in cursor.fetchall()]
             return cursor.fetchall()
             
@@ -63,7 +63,7 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
             res = cursor.fetchone()
             if res:
                 if DATABASE_URL:
-                                    columns = [desc[0] for desc in cursor.description]
+                    columns = [desc[0] for desc in cursor.description]
                     return dict(zip(columns, res))
                 return res
             return None
