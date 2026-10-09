@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto; padding: 10px;">
+<div style="max-width: 800px; margin: 0 auto; padding: 10px; box-sizing: border-box;">
     
     <!-- Tarjeta del Formulario Principal -->
-    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 30px; border-top: 4px solid #0d6efd;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border-top: 4px solid #0d6efd; box-sizing: border-box;">
         
         <!-- SALUDO CON EL NOMBRE DEL OPERADOR EN PANTALLA -->
         <div style="background-color: #f1f5f9; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; color: #334155; font-size: 0.95rem; display: inline-block;">
@@ -13,19 +13,20 @@
         <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información del Excel automáticamente.</p>
         
-        <form method="POST" action="/operador">
+        <!-- SE AÑADIÓ UN ID AL FORMULARIO PARA MANEJAR EL ENVÍO POR JAVASCRIPT Y EVITAR PANTALLAS NEGRAS -->
+        <form id="form_registro" method="POST" action="/operador">
             <div style="margin-bottom: 20px;">
                 <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Número del Vehículo / Placa</label>
                 <input type="text" id="input_vehiculo" name="vehiculo" required placeholder="Ej. 7211" oninput="consultarExcel(this.value)"
                        style="width:100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-transform: uppercase; box-sizing: border-box;">
             </div>
 
-            <!-- Bloque de Información Externa del Excel -->
-            <div id="info_excel" style="display: none; background-color: #f8fafc; border: 1.5px dashed #0d6efd; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Ruta</span><div id="txt_ruta" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
-                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Tabla</span><div id="txt_tabla" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
-                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Hora</span><div id="txt_hora" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">-</div></div>
-                <div><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Novedad</span><div id="txt_novedad" style="font-size:1.1rem; font-weight:bold; color:#ef4444;">-</div></div>
+            <!-- BLOQUE DE EXCEL OPTIMIZADO PARA MÓVILES (GRID CORREGIDO) -->
+            <div id="info_excel" style="display: none; background-color: #f8fafc; border: 1.5px dashed #0d6efd; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; grid-template-columns: repeat(2, 1fr); gap: 15px; box-sizing: border-box;">
+                <div style="min-width: 0;"><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Ruta</span><div id="txt_ruta" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a; word-break: break-all;">-</div></div>
+                <div style="min-width: 0;"><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Tabla</span><div id="txt_tabla" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a; word-break: break-all;">-</div></div>
+                <div style="min-width: 0;"><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Hora</span><div id="txt_hora" style="font-size:1.1rem; font-weight:bold; color:#1e3a8a; word-break: break-all;">-</div></div>
+                <div style="min-width: 0;"><span style="font-size:0.75rem; font-weight:bold; color:#64748b; text-transform:uppercase;">Novedad</span><div id="txt_novedad" style="font-size:1.1rem; font-weight:bold; color:#ef4444; word-break: break-word;">-</div></div>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -50,29 +51,31 @@
         </form>
     </div>
 
-    <!-- Tabla de Historial Reciente -->
-    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; overflow-x: auto;">
+    <!-- Tabla de Historial Reciente con Scroll Lateral Automático -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
         <h4 style="margin-top:0; margin-bottom: 15px; color: #1e293b;">🕒 Sus Últimos 50 Registros</h4>
-        <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
-            <thead>
-                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                    <th style="padding: 12px; color: #475569;">Vehículo</th>
-                    <th style="padding: 12px; color: #475569;">Proceso</th>
-                    <th style="padding: 12px; color: #475569;">Fecha / Hora</th>
-                    <th style="padding: 12px; color: #475569;">Observación</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-weight: bold; color: #0d6efd;">{{ r.vehiculo }}</td>
-                    <td style="padding: 12px;"><span style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">{{ r.proceso }}</span></td>
-                    <td style="padding: 12px; color: #64748b; font-size: 0.85rem;">{{ r.fecha_hora }}</td>
-                    <td style="padding: 12px; color: #475569;">{{ r.observacion }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="width: 100%; overflow-x: auto;">
+            <table style="width:100%; min-width: 500px; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                        <th style="padding: 12px; color: #475569;">Vehículo</th>
+                        <th style="padding: 12px; color: #475569;">Proceso</th>
+                        <th style="padding: 12px; color: #475569;">Fecha / Hora</th>
+                        <th style="padding: 12px; color: #475569;">Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; font-weight: bold; color: #0d6efd;">{{ r.vehiculo }}</td>
+                        <td style="padding: 12px;"><span style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">{{ r.proceso }}</span></td>
+                        <td style="padding: 12px; color: #64748b; font-size: 0.85rem; white-space: nowrap;">{{ r.fecha_hora }}</td>
+                        <td style="padding: 12px; color: #475569;">{{ r.observacion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -87,15 +90,24 @@ function consultarExcel(valor) {
         .then(response => response.json())
         .then(data => {
             if (data.encontrado) {
-                document.getElementById("txt_ruta").innerText = data.ruta;
-                document.getElementById("txt_tabla").innerText = data.tabla;
-                document.getElementById("txt_hora").innerText = data.hora;
-                document.getElementById("txt_novedad").innerText = data.novedad;
-                contenedor.style.display = "grid";
+                document.getElementById("txt_ruta").innerText = data.ruta || "-";
+                document.getElementById("txt_tabla").innerText = data.tabla || "-";
+                document.getElementById("txt_hora").innerText = data.hora || "-";
+                document.getElementById("txt_novedad").innerText = data.novedad || "-";
+                
+                // Corrección para iOS: Forzamos la visualización como grid explícito
+                contenedor.style.setProperty('display', 'grid', 'important');
             } else {
                 contenedor.style.display = "none";
             }
         }).catch(() => { contenedor.style.display = "none"; });
 }
+
+// EVITA QUE EL BOTÓN SE QUEDE CONGELADO AL ENVIAR EN EL CELULAR
+document.getElementById('form_registro').addEventListener('submit', function(e) {
+    const boton = this.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    boton.innerText = "⏳ Guardando...";
+});
 </script>
 {% endblock %}
