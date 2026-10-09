@@ -9,9 +9,9 @@ app = Flask(__name__)
 # LLAVE DE SEGURIDAD CRÍTICA PARA INICIOS DE SESIÓN EN NAVEGADORES MÓVILES
 app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
-# Configuración de la Base de Datos SQLite Local
+# COREGIDO: Cambiamos el nombre del archivo para forzar una base de datos limpia sin errores 500
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_nueva.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
