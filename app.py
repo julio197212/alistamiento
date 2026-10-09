@@ -2,10 +2,9 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-
-# LLAVE DE SEGURIDAD INDISPENSABLE PARA CRONÓMETROS DE SESIÓN EN IPHONE
 app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
 # Configuración de Base de Datos local
@@ -15,7 +14,28 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# MODELO DE REGISTROS DE OPERADORES
+# -------------------------------------------------------------
+# MODELOS DE LA BASE DE DATOS
+# -------------------------------------------------------------
+
+# 1. Tabla de Usuarios
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
+    rol = db.Column(db.String(20), default='operador') # 'administrador' o 'operador'
+
+# 2. Tabla de Información de Móviles (Reemplazo del Excel)
+class InformacionMovil(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    vehiculo = db.Column(db.String(50), unique=True, nullable=False) # Número o Placa
+    ruta = db.Column(db.String(50), nullable=False)
+    tabla = db.Column(db.String(50), nullable=False)
+    hora = db.Column(db.String(50), nullable=False)
+    novedad = db.Column(db.String(255), default='SIN NOVEDAD')
+
+# 3. Tabla de Registros Diarios
 class RegistroVehicular(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehiculo = db.Column(db.String(50), nullable=False)
@@ -24,7 +44,7 @@ class RegistroVehicular(db.Model):
     observacion = db.Column(db.String(255), nullable=True)
 
 # -------------------------------------------------------------
-# CONTROL DE ACCESOS (LOGIN / LOGOUT)
+# AUTENTICACIÓN LOG CON NUEVA BASE DE DATOS
 # -------------------------------------------------------------
 @app.route('/', methods=['GET'])
 def index():
@@ -40,20 +60,17 @@ def login():
         usuario_input = request.form.get('usuario', '').strip().lower()
         contrasena_input = request.form.get('contrasena', '').strip()
         
-        # 1. ACCESO DEL ADMINISTRADOR (Borrado Diario)
-        if usuario_input == 'administrador' and contrasena_input == 'admin1234':
+        user = Usuario.query.filter_by(username=usuario_input).first()
+        
+        if user and check_password_hash(user.password_hash, contrasena_input):
             session.clear()
-            session['nombre'] = 'Administrador'
-            session['rol'] = 'administrador'
-            return redirect(url_for('admin_panel'))
+            session['user_id'] = user.id
+            session['nombre'] = user.nombre
+            session['rol'] = user.rol
             
-        # 2. ACCESO DEL OPERADOR (Jonas)
-        elif usuario_input == 'jonas' and contrasena_input == '1234':
-            session.clear()
-            session['nombre'] = 'Jhonatan Hernandez'
-            session['rol'] = 'operador'
+            if user.rol == 'administrador':
+                return redirect(url_for('admin_panel'))
             return redirect(url_for('operador'))
-            
         else:
             flash("Usuario o contraseña incorrectos", "error")
             return redirect(url_for('login'))
@@ -66,7 +83,7 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------------------------------------------
-# REGISTRO DEL OPERADOR (CORREGIDO CONTRA PANTALLAS NEGRAS / X)
+# OPERADOR: CONSULTA (AHORA EN DB) Y REGISTRO AJAX
 # -------------------------------------------------------------
 @app.route('/operador', methods=['GET', 'POST'])
 def operador():
@@ -78,10 +95,8 @@ def operador():
         proceso = request.form.get('proceso')
         observacion = request.form.get('observacion', 'Ninguna novedad')
         
-        # Estampa de tiempo para el control operativo
         ahora = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         
-        # Almacenamiento en SQLite
         nuevo_registro = RegistroVehicular(
             vehiculo=vehiculo,
             proceso=proceso,
@@ -90,70 +105,109 @@ def operador():
         )
         db.session.add(nuevo_registro)
         db.session.commit()
-        
-        # LA SOLUCIÓN: El servidor responde con JSON en lugar de hacer un redirect(302)
-        # Esto le avisa al script del teléfono que todo salió bien sin trabar el WebView
-        return jsonify({"status": "success", "message": "Registro guardado exitosamente"})
+        return jsonify({"status": "success", "message": "Registro guardado"})
 
-    # Carga de historial ordinario (GET)
     procesos_lista = ["Inspección", "Lavado", "Mantenimiento", "Alistamiento Final"]
     ultimos_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).limit(50).all()
     return render_template('operador.html', procesos=procesos_lista, registros=ultimos_registros)
 
-# -------------------------------------------------------------
-# CONSULTA EN TIEMPO REAL DEL EXCEL
-# -------------------------------------------------------------
+# BUSCADOR DINÁMICO QUE REEMPLAZA AL EXCEL CONSULTANDO LA BASE DE DATOS
 @app.route('/buscar_vehiculo/<vehiculo>', methods=['GET'])
 def buscar_vehiculo(vehiculo):
-    # Simulación de lectura del Excel. Modifícalo según tu archivo.
-    if vehiculo == "7224":
+    info = InformacionMovil.query.filter_by(vehiculo=vehiculo.strip().upper()).first()
+    if info:
         return jsonify({
             "encontrado": True,
-            "ruta": "542",
-            "tabla": "5",
-            "hora": "09:00:00",
-            "novedad": "MANTENIMIENTO"
+            "ruta": info.ruta,
+            "tabla": info.tabla,
+            "hora": info.hora,
+            "novedad": info.novedad
         })
-    
-    return jsonify({
-        "encontrado": True,
-        "ruta": "Línea " + str(vehiculo),
-        "tabla": "A",
-        "hora": "08:00 PM",
-        "novedad": "SIN NOVEDAD"
-    })
+    return jsonify({"encontrado": False})
 
 # -------------------------------------------------------------
-# PANEL DE ADMINISTRACIÓN (BORRAR DATOS DIARIOS TURNO NOCTURNO)
+# PANEL ADMINISTRATIVO COMPLETO
 # -------------------------------------------------------------
 @app.route('/admin', methods=['GET'])
 def admin_panel():
     if session.get('rol') != 'administrador':
-        flash("Acceso denegado.", "error")
         return redirect(url_for('login'))
         
     todos_los_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).all()
-    return render_template('admin.html', registros=todos_los_registros)
+    usuarios = Usuario.query.all()
+    moviles = InformacionMovil.query.all()
+    
+    return render_template('admin.html', registros=todos_los_registros, usuarios=usuarios, moviles=moviles)
+
+# Crear Usuarios desde el Panel
+@app.route('/admin/crear_usuario', methods=['POST'])
+def admin_crear_usuario():
+    if session.get('rol') != 'administrador': return "No autorizado", 403
+    username = request.form.get('username').strip().lower()
+    password = request.form.get('password').strip()
+    nombre = request.form.get('nombre').strip()
+    rol = request.form.get('rol')
+
+    if Usuario.query.filter_by(username=username).first():
+        flash("El nombre de usuario ya existe", "error")
+    else:
+        hashed_pw = generate_password_hash(password)
+        nuevo_usuario = Usuario(username=username, password_hash=hashed_pw, nombre=nombre, rol=rol)
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+        flash(f"Usuario {nombre} creado con éxito", "success")
+    return redirect(url_for('admin_panel'))
+
+# Registrar/Actualizar información de móviles (Reemplazo Excel)
+@app.route('/admin/guardar_movil', methods=['POST'])
+def admin_guardar_movil():
+    if session.get('rol') != 'administrador': return "No autorizado", 403
+    vehiculo = request.form.get('vehiculo').strip().upper()
+    ruta = request.form.get('ruta').strip()
+    tabla = request.form.get('tabla').strip()
+    hora = request.form.get('hora').strip()
+    novedad = request.form.get('novedad').strip() or 'SIN NOVEDAD'
+
+    movil = InformacionMovil.query.filter_by(vehiculo=vehiculo).first()
+    if movil:
+        movil.ruta = ruta
+        movil.tabla = tabla
+        movil.hora = hora
+        movil.novedad = novedad
+        flash(f"Información del vehículo {vehiculo} actualizada", "success")
+    else:
+        nuevo_movil = InformacionMovil(vehiculo=vehiculo, ruta=ruta, tabla=tabla, hora=hora, novedad=novedad)
+        db.session.add(nuevo_movil)
+        flash(f"Vehículo {vehiculo} registrado con éxito", "success")
+        
+    db.session.commit()
+    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/borrar_todo', methods=['POST'])
 def admin_borrar_todo():
-    if session.get('rol') != 'administrador':
-        return "No autorizado", 403
-        
+    if session.get('rol') != 'administrador': return "No autorizado", 403
     try:
-        # Comando para vaciar la tabla por completo para el nuevo turno nocturno
         db.session.query(RegistroVehicular).delete()
         db.session.commit()
-        flash("¡Éxito! Registros del turno anterior limpiados. Base de datos vacía.", "success")
+        flash("Base de datos de registros diarios reiniciada correctamente.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error al limpiar la base de datos: {str(e)}", "error")
-        
+        flash(f"Error: {str(e)}", "error")
     return redirect(url_for('admin_panel'))
 
-# Asegura que las tablas existan al arrancar Render
+# CREACIÓN DE BASE DE DATOS Y USUARIO ADMINISTRADOR POR DEFECTO
 with app.app_context():
     db.create_all()
+    # Si no existe ningún administrador, lo creamos para que puedas entrar la primera vez
+    if not Usuario.query.filter_by(username='administrador').first():
+        admin_predeterminado = Usuario(
+            username='administrador',
+            password_hash=generate_password_hash('admin1234'),
+            nombre='Administrador General',
+            rol='administrador'
+        )
+        db.session.add(admin_predeterminado)
+        db.session.commit()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
