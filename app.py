@@ -6,7 +6,14 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "CLAVE-SECRETA-PRODUCCION-2026")
+# Configuración de cookies seguras para navegación móvil
+app.secret_key = "MINGA_CONTROL_TRANSPORTE_SEGURO_2026"
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 PROCESOS = ["Alistamiento", "Lavado", "Combustible", "Inspección", "Otro"]
 
@@ -33,6 +40,7 @@ def execute_query(query, params=(), fetchall=False, fetchone=False, commit=False
         if commit: conn.rollback()
         raise e
     finally: cursor.close(); conn.close()
+
 def init_db():
     if DATABASE_URL:
         execute_query("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nombre TEXT, usuario TEXT UNIQUE, password VARCHAR(500), rol TEXT, activo INTEGER DEFAULT 1, creado_en TEXT);", commit=True)
@@ -54,7 +62,6 @@ def login_required(f):
         if "usuario_id" not in session: return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
-
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -89,6 +96,7 @@ def buscar_vehiculo(numero):
     except Exception as e:
         return jsonify({"encontrado": False, "msg": str(e)})
     return jsonify({"encontrado": False})
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -139,7 +147,7 @@ def admin():
     operadores = execute_query("SELECT id, nombre FROM usuarios WHERE rol = 'operador' ORDER BY nombre", fetchall=True)
     total = len(registros)
     vehiculos_unicos = len(set([r['vehiculo'] for r in registros])) if registros else 0
-    return render_template("admin.html", registros=registros, operators=operadores, total=total, vehiculos_unicos=vehiculos_unicos, operadores=operadores)
+    return render_template("admin.html", registros=registros, operadores=operadores, total=total, vehiculos_unicos=vehiculos_unicos)
 
 init_db()
 
