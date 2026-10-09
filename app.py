@@ -12,10 +12,10 @@ app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
 # Configuración de la Base de Datos SQLite Local Limpia
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final_v2.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final_v3.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 2. INICIALIZACIÓN CORRECTA DE SQLALCHEMY (Evita el Error 500)
+# 2. INICIALIZACIÓN CORRECTA DE SQLALCHEMY (Evita de raíz el Error 500)
 db = SQLAlchemy()
 db.init_app(app)
 
