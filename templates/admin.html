@@ -35,9 +35,17 @@
         <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: #64748b;">Envía el consolidado de inspecciones y lavados del turno directamente a tu grupo de trabajo.</p>
         
         <!-- Enlace dinámico optimizado para abrir la app nativa de WhatsApp en iPhone/Android -->
-        <a href="https://wa.me{{ mensaje_wa|urlencode }}" target="_blank" style="display: block; text-align: center; text-decoration: none; padding: 14px; background-color: #25d366; color: white; border-radius: 6px; font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            🚀 Enviar Reporte al Grupo de WhatsApp
-        </a>
+        <!-- REEMPLAZA EL BOTÓN VERDE EN ADMIN.HTML POR ESTA VERSIÓN OPTIMIZADA PARA PC -->
+<a href="https://whatsapp.com{{ mensaje_wa }}" target="_blank" id="btn_whatsapp" style="display: block; text-align: center; text-decoration: none; padding: 14px; background-color: #25d366; color: white; border-radius: 6px; font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    🚀 Enviar Reporte al Grupo de WhatsApp (PC / Web)
+</a>
+
+<script>
+// DETECTOR INTELIGENTE: Si el administrador entra desde un celular, cambia el link a la App nativa automáticamente
+if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    document.getElementById('btn_whatsapp').href = "https://whatsapp.com{{ mensaje_wa }}";
+}
+</script>
     </div>
 
     <!-- TARJETA 3: CARGAR INFORMACIÓN DE MÓVILES (REEMPLAZO EXCEL) -->
