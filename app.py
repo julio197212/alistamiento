@@ -15,7 +15,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final_v3.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 2. INICIALIZACIÓN CORRECTA DE SQLALCHEMY (Evita de raíz el Error 500)
+# 2. INICIALIZACIÓN CORRECTA DE SQLALCHEMY
 db = SQLAlchemy()
 db.init_app(app)
 
@@ -68,12 +68,14 @@ def login():
                             request.form.get('pass') or 
                             request.form.get('txt_contrasena') or '').strip()
         
+        # ACCESO MAESTRO GENERAL PREDETERMINADO
         if usuario_input == 'administrador' and contrasena_input == 'admin1234':
             session.clear()
             session['nombre'] = 'Administrador General'
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
 
+        # DICCIONARIO DE CREDENCIALES COMPLETAS DEL PERSONAL (BLINDADO CONTRA BORRADOS)
         usuarios_fijos = {
             "julio": {"pass": "julio123", "nombre": "Julio Muñoz", "rol": "administrador"},
             "juan": {"pass": "juan123", "nombre": "Juan Rojas", "rol": "administrador"},
@@ -181,7 +183,7 @@ def buscar_vehiculo(vehiculo):
     return jsonify({"encontrado": False})
 
 # -------------------------------------------------------------
-# PANEL ADMINISTRATIVO COMPLETO
+# PANEL ADMINISTRATIVO COMPLETO CON REPORTE DE WHATSAPP
 # -------------------------------------------------------------
 @app.route('/admin', methods=['GET'])
 def admin_panel():
@@ -189,42 +191,49 @@ def admin_panel():
         return redirect(url_for('login'))
         
     todos_los_registros = []
-    usuarios = []
     moviles = []
+    
+    conteo_procesos = {
+        "Inspección": 0,
+        "Lavado": 0,
+        "Mantenimiento": 0,
+        "Alistamiento Final": 0
+    }
     
     try:
         todos_los_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).all()
-        usuarios = Usuario.query.all()
         moviles = InformacionMovil.query.all()
+        
+        for r in todos_los_registros:
+            if r.proceso in conteo_procesos:
+                conteo_procesos[r.proceso] += 1
+                
     except Exception:
         pass
-        
-    return render_template('admin.html', registros=todos_los_registros, usuarios=usuarios, moviles=moviles)
 
-# Crear Usuarios Operadores desde el Panel Administrativo
-@app.route('/admin/crear_usuario', methods=['POST'])
-def admin_crear_usuario():
-    if session.get('rol') != 'administrador': 
-        return "No autorizado", 403
+    # REDACCIÓN AUTOMÁTICA DEL REPORTE PARA EL GRUPO DE WHATSAPP
+    fecha_reporte = datetime.now().strftime('%d/%m/%Y')
+    mensaje_whatsapp = (
+        f"📋 *REPORTE DE ALISTAMIENTO MINGA*\n"
+        f"📅 *Fecha:* {fecha_reporte}\n"
+        f"----------------------------------------\n"
+        f"📊 *Resumen de Procesos del Turno:*\n"
+        f"🔍 Inspecciones: {conteo_procesos['Inspección']}\n"
+        f"🧼 Lavados: {conteo_procesos['Lavado']}\n"
+        f"🔧 Mantenimientos: {conteo_procesos['Mantenimiento']}\n"
+        f"✨ Alistamientos Finales: {conteo_procesos['Alistamiento Final']}\n"
+        f"----------------------------------------\n"
+        f"🚗 *Total Vehículos Procesados:* {len(todos_los_registros)}\n\n"
+        f"¡Sistema MINGA Operativo! ✅"
+    )
         
-    username = request.form.get('username').strip().lower()
-    password = request.form.get('password').strip()
-    nombre = request.form.get('nombre').strip()
-    rol = request.form.get('rol')
-
-    try:
-        if Usuario.query.filter_by(username=username).first():
-            flash("El nombre de usuario ya existe en el sistema.", "error")
-        else:
-            hashed_pw = generate_password_hash(password)
-            nuevo_usuario = Usuario(username=username, password_hash=hashed_pw, nombre=nombre, rol=rol)
-            db.session.add(nuevo_usuario)
-            db.session.commit()
-            flash(f"Usuario '{nombre}' creado con éxito.", "success")
-    except Exception as e:
-        flash(f"Error al crear usuario: {str(e)}", "error")
-        
-    return redirect(url_for('admin_panel'))
+    return render_template(
+        'admin.html', 
+        registros=todos_los_registros, 
+        moviles=moviles,
+        conteo=conteo_procesos,
+        mensaje_wa=mensaje_whatsapp
+    )
 
 # Registrar o actualizar los datos del vehículo (Reemplazo del Excel)
 @app.route('/admin/guardar_movil', methods=['POST'])
