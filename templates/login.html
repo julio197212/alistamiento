@@ -3,9 +3,9 @@
 <div style="display: flex; justify-content: center; align-items: center; min-height: 75vh; padding: 20px;">
     <div style="background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 40px; border-top: 5px solid #0d6efd; text-align: center;">
         
-        <!-- LOGO GRANDE Y CENTRADO TRAÍDO DESDE LA CARPETA STATIC -->
+        <!-- LOGO GRANDE ASOCIADO A TU ARCHIVO REAL FAVICON.JPG -->
         <div style="margin-bottom: 25px; display: flex; justify-content: center;">
-            <img src="/static/favicon.jpg" alt="Logo Empresa" 
+            <img src="/static/favicon.jpg" alt="Logo Empresa MINGA" 
                  style="width: 140px; height: 140px; object-fit: contain; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; background-color: #fafafa;">
         </div>
         
@@ -14,26 +14,22 @@
 
         <form method="POST" action="/login" style="text-align: left;">
             <div style="margin-bottom: 20px;">
-                <label for="usuario" style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Usuario</label>
-                <input type="text" id="usuario" name="usuario" required placeholder="Ej. jonas" 
-                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none; transition: all 0.2s;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Usuario</label>
+                <input type="text" name="usuario" required placeholder="Ej. jonas" 
+                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none;">
             </div>
 
             <div style="margin-bottom: 25px;">
-                <label for="password" style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Contraseña</label>
-                <input type="password" id="password" name="password" required placeholder="••••••" 
-                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none; transition: all 0.2s;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Contraseña</label>
+                <input type="password" name="password" required placeholder="••••••" 
+                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none;">
             </div>
 
             <button type="submit" 
-                    style="width: 100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);">
+                    style="width: 100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);">
                 Ingresar al Sistema
             </button>
         </form>
     </div>
 </div>
-
-<style>
-    input:focus { border-color: #0d6efd !important; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15) !important; }
-</style>
 {% endblock %}
