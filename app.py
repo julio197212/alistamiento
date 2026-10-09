@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# 1. INICIALIZACIÓN DE LA APLICACIÓN FLASK
 app = Flask(__name__)
 
 # LLAVE DE SEGURIDAD CRÍTICA PARA INICIOS DE SESIÓN EN NAVEGADORES MÓVILES
@@ -11,10 +12,12 @@ app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
 # Configuración de la Base de Datos SQLite Local Limpia
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final_v2.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+# 2. INICIALIZACIÓN CORRECTA DE SQLALCHEMY (Evita el Error 500)
+db = SQLAlchemy()
+db.init_app(app)
 
 # -------------------------------------------------------------
 # MODELOS DE LA BASE DE DATOS
@@ -71,7 +74,6 @@ def login():
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
 
-        # DICCIONARIO DE CREDENCIALES COMPLETAS DEL PERSONAL
         usuarios_fijos = {
             "julio": {"pass": "julio123", "nombre": "Julio Muñoz", "rol": "administrador"},
             "juan": {"pass": "juan123", "nombre": "Juan Rojas", "rol": "administrador"},
