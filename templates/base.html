@@ -11,7 +11,7 @@
         .nav-brand-container { display: flex; align-items: center; text-decoration: none; }
         .title-minga { color: #ffca28; font-weight: 800; font-size: 1.4rem; letter-spacing: 1px; margin-right: 10px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
         .title-app { color: white; font-weight: bold; font-size: 1.1rem; }
-        nav a.nav-btn { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; padding: 8px 12px; border-radius: 4px; }
+        nav a.nav-btn { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; padding: 8px 12px; border-radius: 4px; transition: all 0.2s; }
         nav a.nav-btn:hover { background-color: rgba(255,255,255,0.2); }
         .btn-danger { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; }
         .container { max-width: 1100px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -19,9 +19,10 @@
     </style>
 </head>
 <body>
+
     <nav>
         <div class="nav-brand-container">
-            <!-- Título MINGA en amarillo -->
+            <!-- Título MINGA en color Amarillo Automotriz -->
             <span class="title-minga">MINGA</span>
             <span class="title-app">{{ app_name }}</span>
         </div>
@@ -31,7 +32,7 @@
                 {% if session.get('rol') == 'admin' %}
                     <a href="/admin" class="nav-link nav-btn">📋 Registros</a>
                 {% endif %}
-                <a href="/logout" class="btn-danger">Logout</a>
+                <a href="/logout" class="btn-danger">Cerrar Sesión</a>
             {% endif %}
         </div>
     </nav>
