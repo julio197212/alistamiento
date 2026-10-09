@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-<!-- ESTILOS RESPONSIVOS EXCLUSIVOS PARA MÓVILES -->
 <style>
     .bloque-excel-movil {
         background-color: #f8fafc; 
@@ -9,45 +8,34 @@
         border-radius: 8px; 
         margin-bottom: 20px; 
         box-sizing: border-box;
-        /* Por defecto en PC se muestra en 4 columnas */
         display: none; 
         grid-template-columns: repeat(4, 1fr); 
         gap: 10px;
     }
-
-    /* Cuando la pantalla es pequeña (Celulares) cambiamos a 2 columnas bien distribuidas */
     @media (max-width: 600px) {
         .bloque-excel-movil {
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 15px !important;
             padding: 12px !important;
         }
-        .item-excel {
-            min-width: 0;
-        }
-        .item-excel span {
-            font-size: 0.7rem !important;
-        }
-        .item-excel div {
-            font-size: 1rem !important;
-        }
+        .item-excel { min-width: 0; }
+        .item-excel span { font-size: 0.7rem !important; }
+        .item-excel div { font-size: 1rem !important; }
     }
 </style>
 
 <div style="max-width: 800px; margin: 0 auto; padding: 10px; box-sizing: border-box;">
-    
     <!-- Tarjeta del Formulario Principal -->
     <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border-top: 4px solid #0d6efd; box-sizing: border-box;">
         
-        <!-- SALUDO CON EL NOMBRE DEL OPERADOR EN PANTALLA -->
         <div style="background-color: #f1f5f9; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; color: #334155; font-size: 0.95rem; display: inline-block;">
             👤 Operador: {{ session.get('nombre') }}
         </div>
 
         <h3 style="margin-top:0; margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">📝 Registrar Proceso Vehicular</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información del Excel automáticamente.</p>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 25px;">Ingrese el vehículo para traer la información de la base de datos automáticamente.</p>
         
-        <form id="form_registro" method="POST" action="/operador">
+        <form id="form_registro">
             <div style="margin-bottom: 20px;">
                 <label style="display:block; font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 8px; text-transform: uppercase;">Número del Vehículo / Placa</label>
                 <input type="text" id="input_vehiculo" name="vehiculo" required placeholder="Ej. 7211" oninput="consultarExcel(this.value)"
@@ -127,46 +115,43 @@ function consultarExcel(valor) {
                 document.getElementById("txt_tabla").innerText = data.tabla || "-";
                 document.getElementById("txt_hora").innerText = data.hora || "-";
                 document.getElementById("txt_novedad").innerText = data.novedad || "-";
-                contenedor.style.setProperty('display', 'grid', 'important');
+                contenedor.style.display = "grid";
             } else {
                 contenedor.style.display = "none";
             }
         }).catch(() => { contenedor.style.display = "none"; });
 }
 
-// SOLUCIÓN AL CONGELAMIENTO DE WHATSAPP (ENVÍO ASÍNCRONO)
+// ENVÍO DE DATOS ASÍNCRONO BLINDADO CONTRA ERROR 500
 document.getElementById('form_registro').addEventListener('submit', function(e) {
-    e.preventDefault(); // Evita que la página intente recargarse al modo tradicional de PC
+    e.preventDefault();
     
     const formulario = this;
     const boton = formulario.querySelector('button[type="submit"]');
-    
-    // Deshabilitamos el botón para evitar registros duplicados
     boton.disabled = true;
-    boton.innerText = "⏳ Guardando en la nube...";
+    boton.innerText = "⏳ Guardando...";
 
-    // Enviamos los datos en segundo plano
     const formData = new FormData(formulario);
     
     fetch("/operador", {
         method: "POST",
         body: formData
     })
-    .then(response => {
-        // Obliga al navegador del celular a refrescar la interfaz limpiamente sin trabarse
-        if (response.ok) {
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === "success") {
             window.location.reload(); 
         } else {
-            alert("Hubo un problema al guardar el registro. Intente de nuevo.");
+            alert("Error del servidor: " + data.message);
             boton.disabled = false;
             boton.innerText = "💾 Guardar Registro Vehicular";
         }
     })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Error de conexión con el servidor.");
+    .catch(() => {
+        alert("Error de red o conexión.");
         boton.disabled = false;
         boton.innerText = "💾 Guardar Registro Vehicular";
     });
 });
 </script>
+{% endblock %}
