@@ -71,6 +71,7 @@ def login():
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
 
+        # DICCIONARIO DE CREDENCIALES COMPLETAS DEL PERSONAL
         usuarios_fijos = {
             "julio": {"pass": "julio123", "nombre": "Julio Muñoz", "rol": "administrador"},
             "juan": {"pass": "juan123", "nombre": "Juan Rojas", "rol": "administrador"},
