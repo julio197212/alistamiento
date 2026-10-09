@@ -12,24 +12,24 @@
         <h2 style="font-size: 1.6rem; color: #1e293b; font-weight: 700; margin-bottom: 5px; margin-top: 0;">Control de Alistamiento</h2>
         <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 30px; margin-top: 0;">Ingrese sus credenciales de acceso</p>
 
-        <form method="POST" action="/login" style="text-align: left;">
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Usuario</label>
-                <input type="text" name="usuario" required placeholder="Ej. jonas" 
-                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none;">
-            </div>
-
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Contraseña</label>
-                <input type="password" name="password" required placeholder="••••••" 
-                       style="width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #1e293b; box-sizing: border-box; outline: none;">
-            </div>
-
-            <button type="submit" 
-                    style="width: 100%; padding: 14px; background-color: #0d6efd; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);">
-                Ingresar al Sistema
-            </button>
-        </form>
+        <!-- Busca la sección del formulario en tu login.html y déjala exactamente así -->
+<form method="POST" action="/login">
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Usuario</label>
+        <!-- CRÍTICO: El name debe ser "usuario" -->
+        <input type="text" name="usuario" required placeholder="Ej. jonas" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Contraseña</label>
+        <!-- CRÍTICO: El name debe ser "contrasena" -->
+        <input type="password" name="contrasena" required placeholder="••••••" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+    </div>
+    
+    <button type="submit" style="width: 100%; padding: 12px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+        Ingresar al Sistema
+    </button>
+</form>
     </div>
 </div>
 {% endblock %}
