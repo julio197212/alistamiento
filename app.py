@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# LLAVE DE SEGURIDAD INDISPENSABLE PARA LLENAR VARIABLES DE SESIÓN EN CELULARES
+# LLAVE DE SEGURIDAD CRÍTICA PARA INICIOS DE SESIÓN EN NAVEGADORES MÓVILES
 app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
 # Configuración de la Base de Datos SQLite Local
@@ -20,18 +20,18 @@ db = SQLAlchemy(app)
 # MODELOS DE LA BASE DE DATOS
 # -------------------------------------------------------------
 
-# 1. Tabla de Usuarios (Para los operadores creados desde la web)
+# 1. Tabla de Usuarios (Creados dinámicamente desde el panel)
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
-    rol = db.Column(db.String(20), default='operador') # 'administrador' o 'operador'
+    rol = db.Column(db.String(20), default='operador') 
 
 # 2. Tabla de Información de Móviles (Reemplazo definitivo del Excel)
 class InformacionMovil(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    vehiculo = db.Column(db.String(50), unique=True, nullable=False) # Número de móvil o Placa
+    vehiculo = db.Column(db.String(50), unique=True, nullable=False) 
     ruta = db.Column(db.String(50), nullable=False)
     tabla = db.Column(db.String(50), nullable=False)
     hora = db.Column(db.String(50), nullable=False)
@@ -62,28 +62,37 @@ def login():
         usuario_input = request.form.get('usuario', '').strip().lower()
         contrasena_input = request.form.get('contrasena', '').strip()
         
-        # 1. ACCESO FIJO PARA EL ADMINISTRADOR (Blindado contra borrados del servidor)
+        # REGLA 1: CONTROL ADMINISTRADOR DIRECTO (Prioridad total sin tocar la DB)
         if usuario_input == 'administrador' and contrasena_input == 'admin1234':
             session.clear()
             session['nombre'] = 'Administrador General'
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
             
-        # 2. ACCESO PARA LOS OPERADORES CREADOS EN LA BASE DE DATOS
-        user = Usuario.query.filter_by(username=usuario_input).first()
-        
-        if user and check_password_hash(user.password_hash, contrasena_input):
+        # REGLA 2: CONTINGENCIA OPERADOR FIJO (Por si Render borra la DB temporal)
+        if usuario_input == 'jonas' and contrasena_input == '1234':
             session.clear()
-            session['user_id'] = user.id
-            session['nombre'] = user.nombre
-            session['rol'] = user.rol
-            
-            if user.rol == 'administrador':
-                return redirect(url_for('admin_panel'))
+            session['nombre'] = 'Jhonatan Hernandez (Temporal)'
+            session['rol'] = 'operador'
             return redirect(url_for('operador'))
-        else:
-            flash("Usuario o contraseña incorrectos", "error")
-            return redirect(url_for('login'))
+
+        # REGLA 3: BUSCADO SEGURO EN BASE DE DATOS
+        try:
+            user = Usuario.query.filter_by(username=usuario_input).first()
+            if user and check_password_hash(user.password_hash, contrasena_input):
+                session.clear()
+                session['user_id'] = user.id
+                session['nombre'] = user.nombre
+                session['rol'] = user.rol
+                
+                if user.rol == 'administrador':
+                    return redirect(url_for('admin_panel'))
+                return redirect(url_for('operador'))
+        except Exception:
+            pass
+
+        flash("Usuario o contraseña incorrectos", "error")
+        return redirect(url_for('login'))
             
     return render_template('login.html')
 
@@ -91,7 +100,6 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 # -------------------------------------------------------------
 # PANEL DEL OPERADOR (VISTA Y GUARDADO COMPATIBLE CON CELULARES)
 # -------------------------------------------------------------
@@ -105,37 +113,45 @@ def operador():
         proceso = request.form.get('proceso')
         observacion = request.form.get('observacion', 'Ninguna novedad')
         
-        # Estampa horaria para la base de datos
         ahora = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         
-        nuevo_registro = RegistroVehicular(
-            vehiculo=vehiculo,
-            proceso=proceso,
-            fecha_hora=ahora,
-            observacion=observacion
-        )
-        db.session.add(nuevo_registro)
-        db.session.commit()
-        
-        # RETORNO ASÍNCRONO: Evita que el navegador de WhatsApp congele la pantalla al guardar
+        try:
+            nuevo_registro = RegistroVehicular(
+                vehiculo=vehiculo,
+                proceso=proceso,
+                fecha_hora=ahora,
+                observacion=observacion
+            )
+            db.session.add(nuevo_registro)
+            db.session.commit()
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)})
+            
         return jsonify({"status": "success", "message": "Registro guardado correctamente"})
 
     procesos_lista = ["Inspección", "Lavado", "Mantenimiento", "Alistamiento Final"]
-    ultimos_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).limit(50).all()
+    ultimos_registros = []
+    try:
+        ultimos_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).limit(50).all()
+    except Exception:
+        pass
     return render_template('operador.html', procesos=procesos_lista, registros=ultimos_registros)
 
-# BUSCADOR DINÁMICO QUE REEMPLAZA AL EXCEL BUSCANDO EN LA BASE DE DATOS
+# BUSCADOR DINÁMICO QUE SUSTITUYE AL EXCEL CONSULTANDO LA BASE DE DATOS
 @app.route('/buscar_vehiculo/<vehiculo>', methods=['GET'])
 def buscar_vehiculo(vehiculo):
-    info = InformacionMovil.query.filter_by(vehiculo=vehiculo.strip().upper()).first()
-    if info:
-        return jsonify({
-            "encontrado": True,
-            "ruta": info.ruta,
-            "tabla": info.tabla,
-            "hora": info.hora,
-            "novedad": info.novedad
-        })
+    try:
+        info = InformacionMovil.query.filter_by(vehiculo=vehiculo.strip().upper()).first()
+        if info:
+            return jsonify({
+                "encontrado": True,
+                "ruta": info.ruta,
+                "tabla": info.tabla,
+                "hora": info.hora,
+                "novedad": info.novedad
+            })
+    except Exception:
+        pass
     return jsonify({"encontrado": False})
 
 # -------------------------------------------------------------
@@ -146,10 +162,17 @@ def admin_panel():
     if session.get('rol') != 'administrador':
         return redirect(url_for('login'))
         
-    todos_los_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).all()
-    usuarios = Usuario.query.all()
-    moviles = InformacionMovil.query.all()
+    todos_los_registros = []
+    usuarios = []
+    moviles = []
     
+    try:
+        todos_los_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).all()
+        usuarios = Usuario.query.all()
+        moviles = InformacionMovil.query.all()
+    except Exception:
+        pass
+        
     return render_template('admin.html', registros=todos_los_registros, usuarios=usuarios, moviles=moviles)
 
 # Crear Usuarios Operadores desde el Panel Administrativo
@@ -163,14 +186,17 @@ def admin_crear_usuario():
     nombre = request.form.get('nombre').strip()
     rol = request.form.get('rol')
 
-    if Usuario.query.filter_by(username=username).first():
-        flash("El nombre de usuario ya existe en el sistema.", "error")
-    else:
-        hashed_pw = generate_password_hash(password)
-        nuevo_usuario = Usuario(username=username, password_hash=hashed_pw, nombre=nombre, rol=rol)
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        flash(f"Usuario '{nombre}' creado con éxito.", "success")
+    try:
+        if Usuario.query.filter_by(username=username).first():
+            flash("El nombre de usuario ya existe en el sistema.", "error")
+        else:
+            hashed_pw = generate_password_hash(password)
+            nuevo_usuario = Usuario(username=username, password_hash=hashed_pw, nombre=nombre, rol=rol)
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            flash(f"Usuario '{nombre}' creado con éxito.", "success")
+    except Exception as e:
+        flash(f"Error al crear usuario: {str(e)}", "error")
         
     return redirect(url_for('admin_panel'))
 
@@ -186,21 +212,22 @@ def admin_guardar_movil():
     hora = request.form.get('hora').strip()
     novedad = request.form.get('novedad').strip() or 'SIN NOVEDAD'
 
-    movil = InformacionMovil.query.filter_by(vehiculo=vehiculo).first()
-    if movil:
-        # Si el vehículo ya existe, actualiza sus campos
-        movil.ruta = ruta
-        movil.tabla = tabla
-        movil.hora = hora
-        movil.novedad = novedad
-        flash(f"Datos del vehículo {vehiculo} actualizados correctamente.", "success")
-    else:
-        # Si el vehículo es nuevo, lo registra de cero
-        nuevo_movil = InformacionMovil(vehiculo=vehiculo, ruta=ruta, tabla=tabla, hora=hora, novedad=novedad)
-        db.session.add(nuevo_movil)
-        flash(f"Vehículo {vehiculo} matriculado con éxito en el sistema.", "success")
+    try:
+        movil = InformacionMovil.query.filter_by(vehiculo=vehiculo).first()
+        if movil:
+            movil.ruta = ruta
+            movil.tabla = tabla
+            movil.hora = hora
+            movil.novedad = novedad
+            flash(f"Datos del vehículo {vehiculo} actualizados correctamente.", "success")
+        else:
+            nuevo_movil = InformacionMovil(vehiculo=vehiculo, ruta=ruta, tabla=tabla, hora=hora, novedad=novedad)
+            db.session.add(nuevo_movil)
+            flash(f"Vehículo {vehiculo} matriculado con éxito en el sistema.", "success")
+        db.session.commit()
+    except Exception as e:
+        flash(f"Error al guardar datos del móvil: {str(e)}", "error")
         
-    db.session.commit()
     return redirect(url_for('admin_panel'))
 
 # Limpieza diaria de datos del turno de operaciones (08:00 PM - 04:00 AM)
@@ -219,7 +246,7 @@ def admin_borrar_todo():
         
     return redirect(url_for('admin_panel'))
 
-# CREACIÓN INICIAL AUTOMÁTICA DE TABLAS
+# CREACIÓN INICIAL AUTOMÁTICA DE TABLAS AL ARRANCAR
 with app.app_context():
     db.create_all()
 
