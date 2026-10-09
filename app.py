@@ -5,18 +5,17 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# CONFIGURACIÓN CRÍTICA DE SEGURIDAD (Corrige el Internal Server Error 500)
-# Esto permite guardar los datos de sesión en los celulares sin que el servidor colapse
-app.secret_key = 'minga_control_alistamiento_key_secreta'
+# LLAVE DE SEGURIDAD INDISPENSABLE PARA CRONÓMETROS DE SESIÓN EN IPHONE
+app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
-# Configuración de la Base de Datos SQLite
+# Configuración de Base de Datos local
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# MODELO DE LA BASE DE DATOS
+# MODELO DE REGISTROS DE OPERADORES
 class RegistroVehicular(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehiculo = db.Column(db.String(50), nullable=False)
@@ -25,26 +24,30 @@ class RegistroVehicular(db.Model):
     observacion = db.Column(db.String(255), nullable=True)
 
 # -------------------------------------------------------------
-# RUTAS DE AUTENTICACIÓN (LOGIN / LOGOUT)
+# CONTROL DE ACCESOS (LOGIN / LOGOUT)
 # -------------------------------------------------------------
 @app.route('/', methods=['GET'])
 def index():
+    if session.get('rol') == 'administrador':
+        return redirect(url_for('admin_panel'))
+    elif session.get('rol') == 'operador':
+        return redirect(url_for('operador'))
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario_input = request.form.get('usuario').strip().lower()
-        contrasena_input = request.form.get('contrasena').strip()
+        usuario_input = request.form.get('usuario', '').strip().lower()
+        contrasena_input = request.form.get('contrasena', '').strip()
         
-        # 1. ACCESO PARA EL ADMINISTRADOR
+        # 1. ACCESO DEL ADMINISTRADOR (Borrado Diario)
         if usuario_input == 'administrador' and contrasena_input == 'admin1234':
             session.clear()
             session['nombre'] = 'Administrador'
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
             
-        # 2. ACCESO PARA EL OPERADOR (JONAS)
+        # 2. ACCESO DEL OPERADOR (Jonas)
         elif usuario_input == 'jonas' and contrasena_input == '1234':
             session.clear()
             session['nombre'] = 'Jhonatan Hernandez'
@@ -63,7 +66,7 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------------------------------------------
-# RUTA DEL OPERADOR (VISTA Y GUARDADO CON COMPATIBILIDAD AJAX)
+# REGISTRO DEL OPERADOR (CORREGIDO CONTRA PANTALLAS NEGRAS / X)
 # -------------------------------------------------------------
 @app.route('/operador', methods=['GET', 'POST'])
 def operador():
@@ -75,10 +78,10 @@ def operador():
         proceso = request.form.get('proceso')
         observacion = request.form.get('observacion', 'Ninguna novedad')
         
-        # Formateamos la fecha y hora de Colombia
+        # Estampa de tiempo para el control operativo
         ahora = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         
-        # Guardamos en la base de datos
+        # Almacenamiento en SQLite
         nuevo_registro = RegistroVehicular(
             vehiculo=vehiculo,
             proceso=proceso,
@@ -88,21 +91,21 @@ def operador():
         db.session.add(nuevo_registro)
         db.session.commit()
         
-        # RESPUESTA JSON: Evita de raíz que la pantalla de WhatsApp en el celular se quede en negro
-        return jsonify({"status": "success", "message": "Registro guardado correctamente"})
+        # LA SOLUCIÓN: El servidor responde con JSON en lugar de hacer un redirect(302)
+        # Esto le avisa al script del teléfono que todo salió bien sin trabar el WebView
+        return jsonify({"status": "success", "message": "Registro guardado exitosamente"})
 
-    # Carga de la lista (GET)
+    # Carga de historial ordinario (GET)
     procesos_lista = ["Inspección", "Lavado", "Mantenimiento", "Alistamiento Final"]
     ultimos_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).limit(50).all()
     return render_template('operador.html', procesos=procesos_lista, registros=ultimos_registros)
 
 # -------------------------------------------------------------
-# SIMULADOR DE BÚSQUEDA EN EL EXCEL
+# CONSULTA EN TIEMPO REAL DEL EXCEL
 # -------------------------------------------------------------
 @app.route('/buscar_vehiculo/<vehiculo>', methods=['GET'])
 def buscar_vehiculo(vehiculo):
-    # Aquí puedes integrar tu lógica real de pandas/openpyxl leyendo el archivo de Excel.
-    # Por ahora, simulamos una respuesta exitosa si consultan el vehículo 7224:
+    # Simulación de lectura del Excel. Modifícalo según tu archivo.
     if vehiculo == "7224":
         return jsonify({
             "encontrado": True,
@@ -112,17 +115,16 @@ def buscar_vehiculo(vehiculo):
             "novedad": "MANTENIMIENTO"
         })
     
-    # Datos por defecto si es otro vehículo
     return jsonify({
         "encontrado": True,
-        "ruta": "Generica",
-        "tabla": "1",
-        "hora": "12:00:00",
+        "ruta": "Línea " + str(vehiculo),
+        "tabla": "A",
+        "hora": "08:00 PM",
         "novedad": "SIN NOVEDAD"
     })
 
 # -------------------------------------------------------------
-# PANEL DEL ADMINISTRADOR (BORRADO DIARIO DEL TURNO NOCTURNO)
+# PANEL DE ADMINISTRACIÓN (BORRAR DATOS DIARIOS TURNO NOCTURNO)
 # -------------------------------------------------------------
 @app.route('/admin', methods=['GET'])
 def admin_panel():
@@ -139,19 +141,19 @@ def admin_borrar_todo():
         return "No autorizado", 403
         
     try:
-        # Vaciamos por completo la tabla para reiniciar el turno de 08:00 PM a 04:00 AM
+        # Comando para vaciar la tabla por completo para el nuevo turno nocturno
         db.session.query(RegistroVehicular).delete()
         db.session.commit()
-        flash("¡Éxito! Base de datos reiniciada para el nuevo turno diario.", "success")
+        flash("¡Éxito! Registros del turno anterior limpiados. Base de datos vacía.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error al limpiar los datos: {str(e)}", "error")
+        flash(f"Error al limpiar la base de datos: {str(e)}", "error")
         
     return redirect(url_for('admin_panel'))
 
-# CREACIÓN AUTOMÁTICA DE TABLAS AL ARRANCAR
+# Asegura que las tablas existan al arrancar Render
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000, debug=True)
+    app.run(host='0.0.0.0', port=10000)
