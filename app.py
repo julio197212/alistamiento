@@ -196,9 +196,11 @@ def admin_borrar_todo():
     return redirect(url_for('admin_panel'))
 
 # CREACIÓN DE BASE DE DATOS Y USUARIO ADMINISTRADOR POR DEFECTO
+# Modifica esta parte al final de tu app.py
 with app.app_context():
-    db.create_all()
-    # Si no existe ningún administrador, lo creamos para que puedas entrar la primera vez
+    db.drop_all()   # <-- AGREGA ESTA LÍNEA SOLO PARA ESTE DESPLIEGUE
+    db.create_all() # Recrea las tablas vacías e inyectará el admin de abajo
+    
     if not Usuario.query.filter_by(username='administrador').first():
         admin_predeterminado = Usuario(
             username='administrador',
