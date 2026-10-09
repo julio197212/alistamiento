@@ -9,9 +9,9 @@ app = Flask(__name__)
 # LLAVE DE SEGURIDAD CRÍTICA PARA INICIOS DE SESIÓN EN NAVEGADORES MÓVILES
 app.secret_key = 'minga_control_alistamiento_key_secreta_2026'
 
-# COREGIDO: Cambiamos el nombre del archivo para forzar una base de datos limpia sin errores 500
+# Configuración de la Base de Datos SQLite Local Limpia
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_nueva.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'minga_final.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -65,14 +65,12 @@ def login():
                             request.form.get('pass') or 
                             request.form.get('txt_contrasena') or '').strip()
         
-        # ACCESO MAESTRO GENERAL
         if usuario_input == 'administrador' and contrasena_input == 'admin1234':
             session.clear()
             session['nombre'] = 'Administrador General'
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
 
-        # DICCIONARIO DE USUARIOS FIJOS BLINDADOS
         usuarios_fijos = {
             "julio": {"pass": "julio123", "nombre": "Julio Muñoz", "rol": "administrador"},
             "juan": {"pass": "juan123", "nombre": "Juan Rojas", "rol": "administrador"},
@@ -246,7 +244,6 @@ def admin_guardar_movil():
             movil.novedad = novedad
             flash(f"Datos del vehículo {vehiculo} actualizados correctamente.", "success")
         else:
-            # CORREGIDO: Se removió por completo el parámetro erróneo 'margin=None'
             nuevo_movil = InformacionMovil(vehiculo=vehiculo, ruta=ruta, tabla=tabla, hora=hora, novedad=novedad)
             db.session.add(nuevo_movil)
             flash(f"Vehículo {vehiculo} matriculado con éxito en el sistema.", "success")
