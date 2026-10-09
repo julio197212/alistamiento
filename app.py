@@ -8,11 +8,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = "MINGA_CONTROL_TRANSPORTE_SEGURO_2026"
 app.config.update(
-    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
 )
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 PROCESOS = ["Alistamiento", "Lavado", "Combustible", "Inspección", "Otro"]
 
