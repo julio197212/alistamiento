@@ -212,7 +212,9 @@ def admin_panel():
         pass
 
     # REDACCIÓN AUTOMÁTICA DEL REPORTE PARA EL GRUPO DE WHATSAPP
+        # REDACCIÓN LIMPIA Y ADAPTADA PARA WHATSAPP WEB EN PC
     fecha_reporte = datetime.now().strftime('%d/%m/%Y')
+    
     mensaje_whatsapp = (
         f"📋 *REPORTE DE ALISTAMIENTO MINGA*\n"
         f"📅 *Fecha:* {fecha_reporte}\n"
@@ -226,6 +228,8 @@ def admin_panel():
         f"🚗 *Total Vehículos Procesados:* {len(todos_los_registros)}\n\n"
         f"¡Sistema MINGA Operativo! ✅"
     )
+    
+    # Importante: Usamos la función nativa de Jinja en el HTML para codificar la URL de forma segura
         
     return render_template(
         'admin.html', 
