@@ -19,8 +19,6 @@ db = SQLAlchemy(app)
 # -------------------------------------------------------------
 # MODELOS DE LA BASE DE DATOS
 # -------------------------------------------------------------
-
-# 1. Tabla de Usuarios (Mecanismo de respaldo web)
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -28,7 +26,6 @@ class Usuario(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     rol = db.Column(db.String(20), default='operador') 
 
-# 2. Tabla de Información de Móviles (Reemplazo definitivo del Excel)
 class InformacionMovil(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehiculo = db.Column(db.String(50), unique=True, nullable=False) 
@@ -37,7 +34,6 @@ class InformacionMovil(db.Model):
     hora = db.Column(db.String(50), nullable=False)
     novedad = db.Column(db.String(255), default='SIN NOVEDAD')
 
-# 3. Tabla de Registros de Procesos Diarios
 class RegistroVehicular(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehiculo = db.Column(db.String(50), nullable=False)
@@ -76,16 +72,13 @@ def login():
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
 
-        # DICCIONARIO DE USUARIOS FIJOS INTEGRADOS DIRECTAMENTE EN EL SERVIDOR
+        # DICCIONARIO DE USUARIOS FIJOS BLINDADOS
         usuarios_fijos = {
-            # ADMINISTRADORES (ADMIN)
             "julio": {"pass": "julio123", "nombre": "Julio Muñoz", "rol": "administrador"},
             "juan": {"pass": "juan123", "nombre": "Juan Rojas", "rol": "administrador"},
             "jorge.albarracin": {"pass": "jorgea123", "nombre": "Jorge Albarracin", "rol": "administrador"},
             "jorge.medina": {"pass": "jorgem123", "nombre": "Jorge medina", "rol": "administrador"},
             "roger": {"pass": "roger123", "nombre": "Roger Alzate", "rol": "administrador"},
-            
-            # OPERADORES (OPERADOR)
             "operador1": {"pass": "Operador123*", "nombre": "Operador 1", "rol": "operador"},
             "jonas": {"pass": "253733", "nombre": "Jhonatan Hernandez", "rol": "operador"},
             "leonard": {"pass": "256102", "nombre": "Leonard Rojas", "rol": "operador"},
@@ -99,7 +92,6 @@ def login():
             "jorge.sanchez": {"pass": "261360", "nombre": "Jorge sanchez", "rol": "operador"},
         }
 
-        # Validación directa sobre el diccionario fijo
         if usuario_input in usuarios_fijos:
             datos_user = usuarios_fijos[usuario_input]
             if contrasena_input == datos_user["pass"]:
@@ -111,7 +103,6 @@ def login():
                     return redirect(url_for('admin_panel'))
                 return redirect(url_for('operador'))
 
-        # Búsqueda complementaria de respaldo en base de datos
         try:
             user = Usuario.query.filter_by(username=usuario_input).first()
             if user and check_password_hash(user.password_hash, contrasena_input):
@@ -286,3 +277,6 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
+
+            
+        
