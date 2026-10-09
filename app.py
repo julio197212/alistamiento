@@ -246,6 +246,7 @@ def admin_guardar_movil():
             movil.novedad = novedad
             flash(f"Datos del vehículo {vehiculo} actualizados correctamente.", "success")
         else:
+            # CORREGIDO: Se removió por completo el parámetro erróneo 'margin=None'
             nuevo_movil = InformacionMovil(vehiculo=vehiculo, ruta=ruta, tabla=tabla, hora=hora, novedad=novedad)
             db.session.add(nuevo_movil)
             flash(f"Vehículo {vehiculo} matriculado con éxito en el sistema.", "success")
@@ -277,6 +278,3 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
-
-            
-        
