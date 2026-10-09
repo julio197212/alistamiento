@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 # MODELOS DE LA BASE DE DATOS
 # -------------------------------------------------------------
 
-# 1. Tabla de Usuarios (Creados dinámicamente desde el panel)
+# 1. Tabla de Usuarios (Para operadores registrados desde la web)
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -59,24 +59,32 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario_input = request.form.get('usuario', '').strip().lower()
-        contrasena_input = request.form.get('contrasena', '').strip()
+        # Buscamos en todas las variantes posibles de nombres de campos que tenga tu login.html
+        usuario_input = (request.form.get('usuario') or 
+                         request.form.get('username') or 
+                         request.form.get('user') or 
+                         request.form.get('txt_usuario') or '').strip().lower()
+                         
+        contrasena_input = (request.form.get('contrasena') or 
+                            request.form.get('password') or 
+                            request.form.get('pass') or 
+                            request.form.get('txt_contrasena') or '').strip()
         
-        # REGLA 1: CONTROL ADMINISTRADOR DIRECTO (Prioridad total sin tocar la DB)
+        # REGLA 1: ACCESO ADMINISTRADOR MAESTRO DIRECTO (Prioridad total sin tocar la DB)
         if usuario_input == 'administrador' and contrasena_input == 'admin1234':
             session.clear()
             session['nombre'] = 'Administrador General'
             session['rol'] = 'administrador'
             return redirect(url_for('admin_panel'))
             
-        # REGLA 2: CONTINGENCIA OPERADOR FIJO (Por si Render borra la DB temporal)
+        # REGLA 2: CONTINGENCIA OPERADOR DIRECTO (Acceso rápido para Jonas)
         if usuario_input == 'jonas' and contrasena_input == '1234':
             session.clear()
             session['nombre'] = 'Jhonatan Hernandez (Temporal)'
             session['rol'] = 'operador'
             return redirect(url_for('operador'))
 
-        # REGLA 3: BUSCADO SEGURO EN BASE DE DATOS
+        # REGLA 3: BÚSQUEDA ORDINARIA DE OTROS USUARIOS EN LA BASE DE DATOS
         try:
             user = Usuario.query.filter_by(username=usuario_input).first()
             if user and check_password_hash(user.password_hash, contrasena_input):
