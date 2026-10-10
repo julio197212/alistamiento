@@ -239,12 +239,13 @@ def admin_panel():
         f"¡Sistema MINGA Operativo! ✅"
     )
         
+        # Asegúrate de que el return final de tu ruta /admin en app.py termine con este formato exacto:
     return render_template(
         'admin.html', 
         registros=todos_los_registros, 
         moviles=moviles,
         conteo=conteo_procesos,
-        conteo_ops=conteo_operadores,  # <-- Enviamos los datos ordenados por operador
+        conteo_ops=conteo_operadores,  # <-- ESTA VARIABLE DEBE LLAMARSE 'conteo_ops'
         mensaje_wa=mensaje_whatsapp
     )
 
