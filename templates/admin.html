@@ -20,14 +20,17 @@
 
     <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 1.6rem;">🛡️ Panel de Control Administrador</h2>
 
-    <!-- TARJETA 1: GRÁFICO VISUAL DE BARRAS -->
-    <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #3b82f6;">
-        <h4 style="margin: 0 0 5px 0; color: #1e293b;">📊 Rendimiento por Operador del Turno Nocturno</h4>
-        <p style="margin: 0 0 20px 0; font-size: 0.85rem; color: #64748b;">Cantidad de vehículos registrados por cada operario en la jornada actual.</p>
-        <div style="position: relative; width: 100%; max-height: 260px;">
-            <canvas id="graficoProcesos"></canvas>
-        </div>
+    <!-- REEMPLAZA LA PRIMERA TARJETA DE LA GRÁFICA EN TU ADMIN.HTML POR ESTA VERSIÓN CON ALTURA FIJA -->
+<div style="background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #3b82f6; box-sizing: border-box;">
+    <h4 style="margin: 0 0 5px 0; color: #1e293b; font-size: 1.2rem; font-weight: 700;">📊 Rendimiento de Móviles por Operador</h4>
+    <p style="margin: 0 0 25px 0; font-size: 0.85rem; color: #64748b;">Cantidad de vehículos inspeccionados y registrados por cada operario en el turno nocturno actual.</p>
+    
+    <!-- CONTENEDOR CON ALTURA CORREGIDA PARA PC (Evita que el gráfico se vuelva invisible) -->
+    <div style="position: relative; width: 100%; height: 280px; min-height: 280px; box-sizing: border-box; padding: 5px;">
+        <canvas id="graficoProcesos"></canvas>
     </div>
+</div>
+
 
     <!-- TARJETA 2: ENVIAR REPORTE DIARIO AL GRUPO DE WHATSAPP -->
     <!-- REEMPLAZA LA TARJETA 2 EN TU ADMIN.HTML POR ESTA LÓGICA ANTI-BLOQUEOS -->
