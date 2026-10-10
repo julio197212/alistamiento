@@ -144,16 +144,133 @@ def operador():
         
         ahora = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         
-               try:
-            nuevo_registro = RegistroVehicular(
-                vehiculo=vehiculo,
-                proceso=proceso,
-                fecha_hora=ahora,
-                observacion=observacion,
-                operador=session.get('nombre', 'Desconocido') # <-- AGREGAR ESTA LÍNEA
-            )
-            db.session.add(nuevo_registro)
-            db.session.commit()
+                   <!-- TARJETA: CARGAR INFORMACIÓN DE MÓVILES (REEMPLAZO EXCEL) -->
+    <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #0d6efd;">
+        <h4 style="margin: 0 0 5px 0; color: #1e293b;">🚍 Cargar / Actualizar Datos del Móvil</h4>
+        <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: #64748b;">Si el número de vehículo ya existe, actualizará sus datos; si no, creará uno nuevo.</p>
+        <form action="/admin/guardar_movil" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+            <input type="text" name="vehiculo" required placeholder="Vehículo / Placa (7211)" style="padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
+            <input type="text" name="ruta" required placeholder="Ruta (Ej. 542)" style="padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+            <input type="text" name="tabla" required placeholder="Tabla (Ej. 3)" style="padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+            <input type="text" name="hora" required placeholder="Hora (Ej. 08:30 PM)" style="padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+            <input type="text" name="novedad" placeholder="Novedad (Opcional)" style="padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+            <button type="submit" style="padding: 10px; background: #0d6efd; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Explicitly Guardar Móvil</button>
+        </form>
+    </div>
+
+    <!-- TARJETA: REINICIAR REGISTROS DIARIOS -->
+    <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #dc3545;">
+        <h4 style="margin: 0 0 10px 0; color: #1e293b;">🗑️ Mantenimiento de Turno Operativo</h4>
+        <form action="/admin/borrar_todo" method="POST" onsubmit="return confirm('¿Borrar todos los registros del turno? No afectará a las rutas creadas.');">
+            <button type="submit" style="width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                Limpiar Historial de Registros Diarios (08:00 PM - 04:00 AM)
+            </button>
+        </form>
+    </div>
+
+    <!-- CORREGIDO: NUEVA TABLA MONITOR DE REGISTROS CON CUADROS DE FILTRADO -->
+    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <h4 style="margin: 0 0 5px 0; color: #1e293b;">📋 Monitor de Registros del Turno</h4>
+        <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: #64748b;">Escriba en las casillas de abajo para buscar por número de móvil o por operario en tiempo real.</p>
+        
+        <!-- BUSCADORES FLOTANTES EN PANTALLA -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #475569; margin-bottom: 5px; text-transform: uppercase;">Filtrar por Móvil</label>
+                <input type="text" id="filtro_movil" onkeyup="aplicarFiltros()" placeholder="Ej. 7224" 
+                       style="width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; text-transform: uppercase;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #475569; margin-bottom: 5px; text-transform: uppercase;">Filtrar por Operador</label>
+                <input type="text" id="filtro_operador" onkeyup="aplicarFiltros()" placeholder="Ej. Jhonatan" 
+                       style="width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <div style="width: 100%; overflow-x: auto;">
+            <table style="width: 100%; min-width: 700px; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                        <th style="padding: 10px;">Vehículo</th>
+                        <th style="padding: 10px;">Operador</th>
+                        <th style="padding: 10px;">Proceso</th>
+                        <th style="padding: 10px;">Fecha / Hora</th>
+                        <th style="padding: 10px;">Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr class="fila-registro" style="border-bottom: 1px solid #e2e8f0;">
+                        <td class="celda-movil" style="padding: 10px; font-weight: bold; color: #0d6efd;">{{ r.vehiculo }}</td>
+                        <td class="celda-operador" style="padding: 10px; color: #1e293b; font-weight: 500;">{{ r.operador or 'Jhonatan Hernandez' }}</td>
+                        <td style="padding: 10px;"><span style="background: #e0f2fe; color: #0369a1; padding: 3px 6px; border-radius: 4px; font-weight: 600;">{{ r.proceso }}</span></td>
+                        <td style="padding: 10px; color: #64748b;">{{ r.fecha_hora }}</td>
+                        <td style="padding: 10px; color: #475569;">{{ r.observacion }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8; font-style: italic;">No hay registros cargados. Base de datos vacía.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT DE INTERACCIÓN DEL GRÁFICO Y FILTRADO DIARIO -->
+<script>
+function aplicarFiltros() {
+    const buscarMovil = document.getElementById("filtro_movil").value.toUpperCase().trim();
+    const buscarOperador = document.getElementById("filtro_operador").value.toLowerCase().trim();
+    const filas = document.getElementsByClassName("fila-registro");
+
+    for (let i = 0; i < filas.length; i++) {
+        const textoMovil = filas[i].querySelector(".celda-movil").innerText.toUpperCase();
+        const textoOperador = filas[i].querySelector(".celda-operador").innerText.toLowerCase();
+
+        const coincideMovil = textoMovil.includes(buscarMovil);
+        const coincideOperador = textoOperador.includes(buscarOperador);
+
+        if (coincideMovil && coincideOperador) {
+            filas[i].style.display = ""; 
+        } else {
+            filas[i].style.display = "none"; 
+        }
+    }
+}
+
+// Código del gráfico de barras Chart.js
+const ctx = document.getElementById('graficoProcesos').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Inspección', 'Lavado', 'Mantenimiento', 'Alistamiento Final'],
+        datasets: [{
+            data: [
+                {{ conteo['Inspección'] }}, 
+                {{ conteo['Lavado'] }}, 
+                {{ conteo['Mantenimiento'] }}, 
+                {{ conteo['Alistamiento Final'] }}
+            ],
+            backgroundColor: ['rgba(13, 110, 253, 0.75)', 'rgba(16, 185, 129, 0.75)', 'rgba(245, 158, 11, 0.75)', 'rgba(107, 114, 128, 0.75)'],
+            borderColor: ['#0d6efd', '#10b981', '#f59e0b', '#6b7280'],
+            borderWidth: 1.5,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748b' }, grid: { color: '#e2e8f0' } },
+            x: { ticks: { color: '#475569', font: { weight: '600', size: 11 } }, grid: { display: false } }
+        }
+    }
+});
+</script>
+{% endblock %}
 
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)})
