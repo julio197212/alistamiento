@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<!-- IMPORTAMOS LA LIBRERÍA DE GRÁFICOS COMPATIBLE CON MÓVILES Y PC -->
-<script src="https://jsdelivr.net"></script>
 
 <div style="max-width: 950px; margin: 0 auto; padding: 10px; box-sizing: border-box;">
     
-    <!-- Mensajes de Alerta (Éxito o Errores) -->
+    <!-- Mensajes de Alerta -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -20,25 +18,36 @@
 
     <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 1.6rem;">🛡️ Panel de Control Administrador</h2>
 
-    <!-- TARJETA 1: GRÁFICO VISUAL O AVISO DE CONTENEDOR VACÍO -->
+    <!-- TARJETA 1: GRÁFICA DE RENDIMIENTO OPERATIVO NATIVA (SIN LIBRERÍAS DE INTERNET) -->
     <div style="background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #3b82f6; box-sizing: border-box;">
         <h4 style="margin: 0 0 5px 0; color: #1e293b; font-size: 1.2rem; font-weight: 700;">📊 Rendimiento de Móviles por Operador</h4>
         <p style="margin: 0 0 25px 0; font-size: 0.85rem; color: #64748b;">Cantidad de vehículos inspeccionados y registrados por cada operario en el turno nocturno actual.</p>
         
-        <!-- Contenedor con altura fija para evitar que se vuelva invisible en computadoras -->
-        <div style="position: relative; width: 100%; height: 280px; min-height: 280px; box-sizing: border-box; padding: 5px;">
-            
-            <!-- AVISO INTELIGENTE: Se muestra si la base de datos no tiene registros en el turno -->
+        <!-- Bloque de visualización directa del servidor -->
+        <div style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;">
             {% if not registros %}
-            <div id="aviso_vacio" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: #94a3b8; font-style: italic; border: 2px dashed #e2e8f0; border-radius: 8px; background-color: #fafafa;">
-                <span style="font-size: 2.5rem; margin-bottom: 10px;">📊</span>
-                <span style="font-size: 1rem; font-weight: 500; color: #475569;">No hay registros almacenados en este turno nocturno.</span>
-                <span style="font-size: 0.8rem; margin-top: 5px; color: #94a3b8;">Las barras de rendimiento aparecerán automáticamente cuando los operadores ingresen datos.</span>
+            <!-- Mensaje estético por defecto si no hay registros en la base de datos -->
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 180px; color: #94a3b8; font-style: italic; border: 2px dashed #e2e8f0; border-radius: 8px; background-color: #fafafa;">
+                <span style="font-size: 2.2rem; margin-bottom: 8px;">📊</span>
+                <span style="font-size: 0.95rem; font-weight: 500; color: #475569;">No hay registros almacenados en este turno nocturno.</span>
+                <span style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">Las barras de rendimiento aparecerán automáticamente cuando los operadores ingresen datos.</span>
             </div>
+            {% else %}
+                <!-- SISTEMA DE BARRAS DE RENDIMIENTO DINÁMICAS -->
+                {% for op, cant in conteo_ops.items() %}
+                <div style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; color: #334155;">
+                        <span>👤 {{ op }}</span>
+                        <span style="color: #0d6efd;">{{ cant }} Vehículo(s)</span>
+                    </div>
+                    <!-- Contenedor fondo gris de la barra -->
+                    <div style="width: 100%; background-color: #f1f5f9; height: 22px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                        <!-- Barra azul que crece según la cantidad de móviles -->
+                        <div style="width: {% if cant > 10 %} 100% {% else %} {{ cant * 10 }}% {% endif %}; background-color: #0d6efd; height: 100%; border-radius: 6px; transition: width 0.4s ease;"></div>
+                    </div>
+                </div>
+                {% endfor %}
             {% endif %}
-
-            <!-- El lienzo del gráfico se oculta si no hay datos para evitar errores visuales -->
-            <canvas id="graficoProcesos" style="{% if not registros %} display: none; {% endif %}"></canvas>
         </div>
     </div>
 
@@ -47,7 +56,7 @@
         <h4 style="margin: 0 0 5px 0; color: #1e293b;">💬 Compartir Resultados en WhatsApp</h4>
         <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: #64748b;">Envía el consolidado de inspecciones y lavados del turno directamente a tu grupo de trabajo de forma segura.</p>
         
-        <!-- Botón controlado por JavaScript para evitar bloqueos del navegador -->
+        <!-- Botón con redirección limpia directa que no requiere librerías para ejecutarse -->
         <button type="button" onclick="enviarReporteWhatsApp()" style="width: 100%; padding: 14px; background-color: #25d366; color: white; border: none; border-radius: 6px; font-size: 1.05rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             🚀 Enviar Reporte al Grupo de WhatsApp
         </button>
@@ -126,7 +135,7 @@
     </div>
 </div>
 
-<!-- LÓGICA DE JAVASCRIPT UNIFICADA Y BLINDADA -->
+<!-- LÓGICA DE JAVASCRIPT DIRECTA SIN DEPENDENCIAS EXTERNAS -->
 <script>
 function enviarReporteWhatsApp() {
     const textoPlano = `{{ mensaje_wa | safe }}`;
@@ -159,44 +168,6 @@ function aplicarFiltros() {
             filas[i].style.display = "none"; 
         }
     }
-}
-
-// Inicialización del gráfico por operadores
-const nombresOperadores = [];
-const cantidadesMoviles = [];
-
-{% if conteo_ops %}
-    {% for op, cant in conteo_ops.items() %}
-        nombresOperadores.push("{{ op }}");
-        cantidadesMoviles.push({{ cant }});
-    {% endfor %}
-{% endif %}
-
-if (nombresOperadores.length > 0) {
-    const ctx = document.getElementById('graficoProcesos').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: nombresOperadores,
-            datasets: [{
-                label: 'Móviles Procesados',
-                data: cantidadesMoviles,
-                backgroundColor: 'rgba(13, 110, 253, 0.75)',
-                borderColor: '#0d6efd',
-                borderWidth: 1.5,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748b' }, grid: { color: '#e2e8f0' } },
-                x: { ticks: { color: '#475569', font: { weight: '600', size: 11 } }, grid: { display: false } }
-            }
-        }
-    });
 }
 </script>
 {% endblock %}
