@@ -231,12 +231,13 @@ def admin_panel():
     
     # Importante: Usamos la función nativa de Jinja en el HTML para codificar la URL de forma segura
         
-    return render_template(
+        return render_template(
         'admin.html', 
         registros=todos_los_registros, 
         moviles=moviles,
         conteo=conteo_procesos,
-        mensaje_wa=mensaje_whatsapp
+        mensaje_wa=mensaje_whatsapp # <-- Asegúrate de que apunte a 'mensaje_wa'
+    
     )
 
 # Registrar o actualizar los datos del vehículo (Reemplazo del Excel)
