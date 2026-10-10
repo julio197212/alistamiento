@@ -185,6 +185,9 @@ def buscar_vehiculo(vehiculo):
 # -------------------------------------------------------------
 # PANEL ADMINISTRATIVO COMPLETO CON REPORTE DE WHATSAPP
 # -------------------------------------------------------------
+# -------------------------------------------------------------
+# PANEL ADMINISTRATIVO COMPLETO CON TEXTO LIMPIO PARA WHATSAPP
+# -------------------------------------------------------------
 @app.route('/admin', methods=['GET'])
 def admin_panel():
     if session.get('rol') != 'administrador':
@@ -211,10 +214,8 @@ def admin_panel():
     except Exception:
         pass
 
-    # REDACCIÓN AUTOMÁTICA DEL REPORTE PARA EL GRUPO DE WHATSAPP
-        # REDACCIÓN LIMPIA Y ADAPTADA PARA WHATSAPP WEB EN PC
+    # REDACCIÓN LIMPIA CON TEXTO PLANO SEGURO
     fecha_reporte = datetime.now().strftime('%d/%m/%Y')
-    
     mensaje_whatsapp = (
         f"📋 *REPORTE DE ALISTAMIENTO MINGA*\n"
         f"📅 *Fecha:* {fecha_reporte}\n"
@@ -228,16 +229,13 @@ def admin_panel():
         f"🚗 *Total Vehículos Procesados:* {len(todos_los_registros)}\n\n"
         f"¡Sistema MINGA Operativo! ✅"
     )
-    
-    # Importante: Usamos la función nativa de Jinja en el HTML para codificar la URL de forma segura
         
-        return render_template(
+    return render_template(
         'admin.html', 
         registros=todos_los_registros, 
         moviles=moviles,
         conteo=conteo_procesos,
-        mensaje_wa=mensaje_whatsapp # <-- Asegúrate de que apunte a 'mensaje_wa'
-    
+        mensaje_wa=mensaje_whatsapp
     )
 
 # Registrar o actualizar los datos del vehículo (Reemplazo del Excel)
