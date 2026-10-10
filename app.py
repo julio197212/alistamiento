@@ -185,7 +185,7 @@ def buscar_vehiculo(vehiculo):
     return jsonify({"encontrado": False})
 
 # -------------------------------------------------------------
-# PANEL ADMINISTRATIVO COMPLETO CON REPORTE DE WHATSAPP
+# PANEL ADMINISTRATIVO CON CONTEO POR OPERADOR PARA EL GRÁFICO
 # -------------------------------------------------------------
 @app.route('/admin', methods=['GET'])
 def admin_panel():
@@ -202,13 +202,24 @@ def admin_panel():
         "Alistamiento Final": 0
     }
     
+    # Diccionario dinámico para contar cuántos vehículos lleva cada operario
+    conteo_operadores = {}
+    
     try:
         todos_los_registros = RegistroVehicular.query.order_by(RegistroVehicular.id.desc()).all()
         moviles = InformacionMovil.query.all()
         
         for r in todos_los_registros:
+            # Conteo para el texto de WhatsApp
             if r.proceso in conteo_procesos:
                 conteo_procesos[r.proceso] += 1
+            
+            # Conteo para el Gráfico de Barras por Operador
+            nombre_op = r.operador or 'Jhonatan Hernandez'
+            if nombre_op in conteo_operadores:
+                conteo_operadores[nombre_op] += 1
+            else:
+                conteo_operadores[nombre_op] = 1
                 
     except Exception:
         pass
@@ -233,6 +244,7 @@ def admin_panel():
         registros=todos_los_registros, 
         moviles=moviles,
         conteo=conteo_procesos,
+        conteo_ops=conteo_operadores,  # <-- Enviamos los datos ordenados por operador
         mensaje_wa=mensaje_whatsapp
     )
 
