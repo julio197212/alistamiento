@@ -43,6 +43,7 @@ class RegistroVehicular(db.Model):
     proceso = db.Column(db.String(100), nullable=False)
     fecha_hora = db.Column(db.String(100), nullable=False)
     observacion = db.Column(db.String(255), nullable=True)
+    operador = db.Column(db.String(100), nullable=True) # <-- AGREGAR ESTA LÍNEA
 
 # -------------------------------------------------------------
 # CONTROL DE RUTAS DE AUTENTICACIÓN (LOGIN / LOGOUT)
@@ -143,15 +144,17 @@ def operador():
         
         ahora = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         
-        try:
+               try:
             nuevo_registro = RegistroVehicular(
                 vehiculo=vehiculo,
                 proceso=proceso,
                 fecha_hora=ahora,
-                observacion=observacion
+                observacion=observacion,
+                operador=session.get('nombre', 'Desconocido') # <-- AGREGAR ESTA LÍNEA
             )
             db.session.add(nuevo_registro)
             db.session.commit()
+
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)})
             
