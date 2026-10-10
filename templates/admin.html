@@ -22,8 +22,8 @@
 
     <!-- TARJETA 1: GRÁFICO VISUAL DE BARRAS -->
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid #3b82f6;">
-        <h4 style="margin: 0 0 5px 0; color: #1e293b;">📊 Resumen de Procesos del Turno Nocturno</h4>
-        <p style="margin: 0 0 20px 0; font-size: 0.85rem; color: #64748b;">Cantidad de vehículos procesados en la jornada actual.</p>
+        <h4 style="margin: 0 0 5px 0; color: #1e293b;">📊 Rendimiento por Operador del Turno Nocturno</h4>
+        <p style="margin: 0 0 20px 0; font-size: 0.85rem; color: #64748b;">Cantidad de vehículos registrados por cada operario en la jornada actual.</p>
         <div style="position: relative; width: 100%; max-height: 260px;">
             <canvas id="graficoProcesos"></canvas>
         </div>
@@ -141,42 +141,37 @@ function enviarReporteWhatsApp() {
 </div>
 
 <!-- SCRIPT DE INTERACCIÓN DEL GRÁFICO Y FILTRADO DIARIO -->
+<!-- CORREGIDO: RENDIMIENTO DE MÓVILES POR OPERADOR -->
 <script>
-function aplicarFiltros() {
-    const buscarMovil = document.getElementById("filtro_movil").value.toUpperCase().trim();
-    const buscarOperador = document.getElementById("filtro_operador").value.toLowerCase().trim();
-    const filas = document.getElementsByClassName("fila-registro");
+// Extraemos las llaves (nombres) y valores (cantidades) enviados desde Python
+const nombresOperadores = [
+    {% for op in conteo_ops.keys() %}
+        "{{ op }}",
+    {% endfor %}
+];
 
-    for (let i = 0; i < filas.length; i++) {
-        const textoMovil = filas[i].querySelector(".celda-movil").innerText.toUpperCase();
-        const textoOperador = filas[i].querySelector(".celda-operador").innerText.toLowerCase();
+const cantidadesMoviles = [
+    {% for cant in conteo_ops.values() %}
+        {{ cant }},
+    {% endfor %}
+];
 
-        const coincideMovil = textoMovil.includes(buscarMovil);
-        const coincideOperador = textoOperador.includes(buscarOperador);
-
-        if (coincideMovil && coincideOperador) {
-            filas[i].style.display = ""; 
-        } else {
-            filas[i].style.display = "none"; 
-        }
-    }
+// Si no hay datos cargados en el turno, mostramos una barra vacía por defecto
+if (nombresOperadores.length === 0) {
+    nombresOperadores.push("Sin registros");
+    cantidadesMoviles.push(0);
 }
 
-// Código del gráfico de barras Chart.js
 const ctx = document.getElementById('graficoProcesos').getContext('2d');
 new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ['Inspección', 'Lavado', 'Mantenimiento', 'Alistamiento Final'],
+        labels: nombresOperadores,
         datasets: [{
-            data: [
-                {{ conteo['Inspección'] }}, 
-                {{ conteo['Lavado'] }}, 
-                {{ conteo['Mantenimiento'] }}, 
-                {{ conteo['Alistamiento Final'] }}
-            ],
-            backgroundColor: ['rgba(13, 110, 253, 0.75)', 'rgba(16, 185, 129, 0.75)', 'rgba(245, 158, 11, 0.75)', 'rgba(107, 114, 128, 0.75)'],
-            borderColor: ['#0d6efd', '#10b981', '#f59e0b', '#6b7280'],
+            label: 'Móviles Procesados',
+            data: cantidadesMoviles,
+            backgroundColor: 'rgba(13, 110, 253, 0.75)', // Azul MINGA
+            borderColor: '#0d6efd',
             borderWidth: 1.5,
             borderRadius: 4
         }]
@@ -184,10 +179,24 @@ new Chart(ctx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false }
+        },
         scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748b' }, grid: { color: '#e2e8f0' } },
-            x: { ticks: { color: '#475569', font: { weight: '600', size: 11 } }, grid: { display: false } }
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, color: '#64748b' },
+                grid: { color: '#e2e8f0' }
+            },
+            x: {
+                ticks: { 
+                    color: '#475569', 
+                    font: { weight: '600', size: 11 },
+                    maxRotation: 45, // Rota el nombre si hay muchos operadores en pantalla
+                    minRotation: 0
+                },
+                grid: { display: false }
+            }
         }
     }
 });
